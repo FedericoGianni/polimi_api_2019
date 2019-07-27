@@ -12,6 +12,8 @@
 
 //initial input line length
 #define DEF_INPUT_L 1024
+//input length increment
+#define DEF_INPUT_L_INC 16
 
 //entity hash table length
 #define DEF_ENT_N 1024
@@ -68,6 +70,9 @@ entity *entity_hash [DEF_ENT_N];
 
 //FUNCTIONS DEFINITION
 char *readStdIn();
+char *inputString(FILE *,int);
+
+
 int hash(char *);
 
 
@@ -96,19 +101,19 @@ void main() {
     while(!end){
 
         //read input from stdin, line by line allocating a dynamic array for each line
-        input = readStdIn();
-
-        short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
-        strncpy(short_name, input + 8 * sizeof(char), strlen(input) - 10);
+        input = inputString(stdin, DEF_INPUT_L);
 
         printf("\n[DEBUG] Letta la stringa: %s", input);
-        printf("\n[DEBUG] Short_name: %s", short_name);
+
 
         if(strncmp(input, ADDENT, 6) == 0){
 
+            short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
+            strncpy(short_name, input + 7 * sizeof(char), strlen(input) - 7);
+            printf("\n[DEBUG] Short_name: %s", short_name);
+
             printf("\n[DEBUG]----------------- chiamo addEnt per aggiungere un entità-------------");
             addEnt(short_name, entity_hash[0]);
-
 
         } else if(strncmp(input, DELENT, 6) == 0){
             //TODO remove this entity also from every relation
@@ -139,30 +144,28 @@ void main() {
 
         //TODO forse non servono perchè tanto vengono sovrascritti a ogni giro e mi rallenta
         free(input);
-        free(short_name);
 
     }
 }
 
-char* readStdIn() {
+char *inputString(FILE* fp, int size){
 
-    char* input = NULL;
-    char tempbuf[DEF_INPUT_L];
-    size_t inputlength = 0, templength = 0;
+    char *str;
+    int ch;
+    size_t len = 0;
+    str = (char*) malloc(sizeof(char)*size);
+    if(!str)return str;
+    while(EOF!=(ch=fgetc(fp)) && ch != '\n'){
+        str[len++]=ch;
+        if(len==size){
+            str = realloc(str, sizeof(char)*(size+=DEF_INPUT_L_INC));
+            if(!str)return str;
+        }
+    }
+    str[len++]='\0';
 
-    do {
-
-        fgets(tempbuf, DEF_INPUT_L, stdin);
-        templength = strlen(tempbuf);
-        inputlength += templength;
-        input = realloc(input, inputlength+1);
-        strcat(input, tempbuf);
-
-    } while (templength==DEF_INPUT_L-1 && tempbuf[DEF_INPUT_L-2]!='\n');
-
-    return input;
+    return realloc(str, sizeof(char)*len);
 }
-
 
 //replace the relation types array passed as a pointer with a new relation_t array of incremented size
 relation_t *replace_rel_t_arr(relation_t *rel_arr, int l_max, int inc) {
@@ -203,6 +206,7 @@ bool addEnt(char *str, entity *e) {
 
     if(entity_hash[index] == NULL){
         //if the linked list in this hash index is empty, the entity is not present for sure
+        printf("entro nell'indice dell'hash table %d che ho trovato vuoto.", index);
         entity * newEnt;
         newEnt = (entity *) malloc(sizeof(entity));
 
@@ -220,13 +224,14 @@ bool addEnt(char *str, entity *e) {
 
         entity *ptr = entity_hash[index];
 
-        while(ptr->next != NULL){
+        do{
             if(strcmp(str, ptr->id_ent)==0){
                 //the entity has already been added, do nothing
                 printf("[DEBUG] entità già presente nella lista. non faccio nulla");
                 return false;
             }
-        }
+            ptr = ptr->next;
+        }while(ptr->next != NULL);
 
         //at this point the entity has not been found and at the same time ptr points to the last pos of the linked list
         entity * newEnt;
