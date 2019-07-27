@@ -10,27 +10,110 @@
 #define REPORT "report"
 #define END "end"
 
-#define DEF_STRING_L 1024
+//initial input line length
+#define DEF_INPUT_L 1024
 
+//entity hash table length
+#define DEF_ENT_N 1024
+
+//initial entity_id length
+#define DEF_ENT_ID_L 10
+
+//initial relations type array length
+#define DEF_REL_T_L 12
+
+//initial relation types id length
+#define DEF_REL_T_ID_L 10
+
+//GLOBAL DATA STRUCTURES
+
+typedef struct entity {
+
+    //pointer to a dynamic array which stores the id of the entity
+    char *id_ent;
+
+    struct entity *next;
+
+} entity;
+
+typedef struct relation{
+
+    //pointer to the entity who is giving the relation
+    entity *sender;
+
+    //pointer to the entity who is receiving the relation
+    entity *receiving;
+
+
+}relation;
+
+
+typedef struct relation_t {
+
+    //pointer to a dynamic array which stores the id of the relation type
+    char *id_rel;
+
+    //pointer to a dynamic array of pointers to the entities which have the max incoming relationships for this relation type
+    entity *max_inc_rels;
+
+    //pointer to a dynamic array of relation, which stores every single relation of this type
+    relation *relation_list;
+
+
+} relation_t;
+
+//GLOBAL VARIABLES
+//hash table to store the entities
+entity *entity_hash [DEF_ENT_N];
+
+//FUNCTIONS DEFINITION
 char *readStdIn();
+int hash(char *);
+
+
+//bool addEnt(char *, entity *, int );
+bool addEnt(char *, entity*);
+bool delEnt(char *str, entity *entity_arr);
+void report();
 
 
 void main() {
 
     bool end = false;
+
+    //dynamic array to read input lines
     char *input;
+
+    //input without "" and other shit
+    char *short_name;
+
+
+    //dynamic array to store the relationships
+    relation_t *relation_array;
+
+    relation_array = (relation_t*) malloc(sizeof(relation_t)*DEF_REL_T_L);
 
     while(!end){
 
         //read input from stdin, line by line allocating a dynamic array for each line
         input = readStdIn();
+
+        short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
+        strncpy(short_name, input + 8 * sizeof(char), strlen(input) - 10);
+
         printf("\n[DEBUG] Letta la stringa: %s", input);
+        printf("\n[DEBUG] Short_name: %s", short_name);
 
         if(strncmp(input, ADDENT, 6) == 0){
-            printf("[DEBUG] read addent\n");
+
+            printf("\n[DEBUG]----------------- chiamo addEnt per aggiungere un entità-------------");
+            addEnt(short_name, entity_hash[0]);
+
 
         } else if(strncmp(input, DELENT, 6) == 0){
+            //TODO remove this entity also from every relation
             printf("[DEBUG] read deleent\n");
+
 
         } else if(strncmp(input, ADDREL, 6) == 0){
             printf("[DEBUG] read add rel\n");
@@ -40,6 +123,7 @@ void main() {
 
         } else if(strncmp(input, REPORT, 6) == 0){
             printf("[DEBUG] read repo\n");
+            report();
 
         } else if(strncmp(input, END, 3) == 0){
             printf("[DEBUG] end!");
@@ -52,7 +136,10 @@ void main() {
 
         //de-allocate heap memory used to store string input, since in the next execution the pointer will point to
         //the new string and it will be impossible to eliminate old string from heap
+
+        //TODO forse non servono perchè tanto vengono sovrascritti a ogni giro e mi rallenta
         free(input);
+        free(short_name);
 
     }
 }
@@ -60,18 +147,143 @@ void main() {
 char* readStdIn() {
 
     char* input = NULL;
-    char tempbuf[DEF_STRING_L];
+    char tempbuf[DEF_INPUT_L];
     size_t inputlength = 0, templength = 0;
 
     do {
 
-        fgets(tempbuf, DEF_STRING_L, stdin);
+        fgets(tempbuf, DEF_INPUT_L, stdin);
         templength = strlen(tempbuf);
         inputlength += templength;
         input = realloc(input, inputlength+1);
         strcat(input, tempbuf);
 
-    } while (templength==DEF_STRING_L-1 && tempbuf[DEF_STRING_L-2]!='\n');
+    } while (templength==DEF_INPUT_L-1 && tempbuf[DEF_INPUT_L-2]!='\n');
 
     return input;
+}
+
+
+//replace the relation types array passed as a pointer with a new relation_t array of incremented size
+relation_t *replace_rel_t_arr(relation_t *rel_arr, int l_max, int inc) {
+
+    relation_t *new_rel_arr;
+
+    new_rel_arr = (relation_t*) malloc(sizeof(relation_t)*(l_max+inc));
+
+    for (int i = 0; i < l_max; ++i) {
+        new_rel_arr[i] = rel_arr[i];
+    }
+
+    free(rel_arr);
+
+    return new_rel_arr;
+}
+
+//replace the string passed as a pointer with a new string of incremented size
+char *replace_char_arr(char *str, int l_max, int inc) {
+
+    char *new_char_arr;
+
+    new_char_arr = (char*) malloc(sizeof(char)*(l_max+inc));
+
+    for (int i = 0; i < l_max; ++i) {
+        new_char_arr[i] = str[i];
+    }
+
+    free(str);
+
+    return new_char_arr;
+}
+
+bool addEnt(char *str, entity *e) {
+
+    int index = hash(str);
+    printf("[DEBUG] indice dell'hash table calcolato su questo nome: %d\n", index);
+
+    if(entity_hash[index] == NULL){
+        //if the linked list in this hash index is empty, the entity is not present for sure
+        entity * newEnt;
+        newEnt = (entity *) malloc(sizeof(entity));
+
+        newEnt->id_ent = (char*) malloc(sizeof(str));
+        strcpy(newEnt->id_ent, str);
+        newEnt->next = NULL;
+
+        entity_hash[index] = newEnt;
+
+
+        printf("[DEBUG] aggiunta entità: %s nell'indice %d che era vuoto (no collisioni). ", str, index);
+        return true;
+
+    } else {
+
+        entity *ptr = entity_hash[index];
+
+        while(ptr->next != NULL){
+            if(strcmp(str, ptr->id_ent)==0){
+                //the entity has already been added, do nothing
+                printf("[DEBUG] entità già presente nella lista. non faccio nulla");
+                return false;
+            }
+        }
+
+        //at this point the entity has not been found and at the same time ptr points to the last pos of the linked list
+        entity * newEnt;
+        newEnt = (entity *) malloc(sizeof(entity));
+
+        newEnt->id_ent = (char*) malloc(sizeof(str));
+        strcpy(newEnt->id_ent, str);
+
+        ptr->next = newEnt;
+        newEnt->next = NULL;
+
+        printf("[DEBUG] aggiunta entità: %s nell'indice %d che non era vuoto (si collisioni). ", str, index);
+        return true;
+
+    }
+
+
+}
+
+//hash function that generates an array index based on a calc on the entity name
+int hash(char *str){
+
+    long sum = 0;
+
+    for (int i = 0; i < strlen(str); ++i) {
+
+        sum = sum + (int) str[i];
+
+    }
+
+    return (sum + 3) % DEF_ENT_N;
+}
+
+
+bool delEnt(char *str, entity *entity_arr){
+
+    //TODO
+
+    return false;
+
+}
+
+bool addRel(){
+
+    //TODO
+
+    return false;
+}
+
+bool delRel(){
+
+    //TODO
+
+    return false;
+}
+
+void report(){
+
+    //TODO
 }
