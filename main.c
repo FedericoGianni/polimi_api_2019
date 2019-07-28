@@ -132,10 +132,7 @@ void main() {
 
 
         } else if(strncmp(input, ADDREL, 6) == 0){
-            printf("[DEBUG] read add rel\n");
-
-            //TODO tirare fuori dalla stringa completa: id_rel, id_ent_A, id_ent_B
-            //TODO addRel(id_rel, id_a, id_b);
+            printf("\n[DEBUG] read add rel\n");
             int curr_pos = 8;
 
             char *ch = &input[8];
@@ -150,15 +147,16 @@ void main() {
 
             //+1 to include \0
             char *id_a = (char *) malloc(i* sizeof(char) + 1);
-            strncpy(id_a, &input[8], i);
+            strncpy(id_a, &input[8], i+1);
             id_a[i] = '\0';
+            //printf("\nid_a: %s", id_a);
 
             //skip the " " to point to id_b
-            ch = &input[i+3];
+            ch = &input[i+11];
             curr_pos += i + 3;
             //printf("\nadesso ch punta all'iniziale del 2 nome -> %c", *ch);
 
-            //printf("giro1.1: %d, curr pos: %d", i,curr_pos);
+            //printf("\ngiro1.1: %d, curr pos: %d", i,curr_pos);
 
             i = 0;
             while(*ch != '"'){
@@ -173,6 +171,7 @@ void main() {
             char *id_b = (char *) malloc((i* sizeof(char)) + 1);
             strncpy(id_b, &input[curr_pos], i);
             id_b[curr_pos+i] = '\0';
+            //printf("\nid_b: %s", id_b);
 
             //skip the " " to point to id_b
             curr_pos += i + 3;
@@ -194,9 +193,12 @@ void main() {
             strncpy(id_rel, &input[curr_pos], i);
             id_rel[curr_pos+i-1] = '\0';
 
-            printf("id_a: %s ", id_a);
+            printf("\nid_a: %s ", id_a);
             printf("id_b: %s ", id_b);
             printf("id_rel: %s ", id_rel);
+
+            //TODO addRel(id_rel, id_a, id_b);
+            addRel(id_a, id_b, id_rel);
 
 
         } else if(strncmp(input, DELREL, 6) == 0){
@@ -405,12 +407,75 @@ bool delEnt(char *str, entity *e){
 
 bool addRel(char *id_a, char *id_b, char *id_rel){
 
-    // 1.1 verifica che id_rel esista già o meno -> se non esiste creala
-    // 1.2 verifica che esistano entrambe le entità -> datore e ricevente
+    // 1.1 verifica che esistano entrambe le entità -> datore e ricevente (se non esiste uno dei 2 fermati)
+    // 1.2 verifica che id_rel esista già o meno -> se non esiste creala
     // 2 aggiungi la relazione alla lista di relazioni di quel tipo
     // 3 aggiorna contatori entità e lista max
 
-    //1.1
+    //1.1 controllo che esistano entità A e B, se una delle 2 non esiste, termina
+    bool entity_a_found = false;
+    bool entity_b_found = false;
+    entity* ent_a;
+    entity* ent_b;
+    int ind = hash(id_a);
+
+    printf("\n\nindex restituito da hash(%s): %d", id_a, ind);
+
+    entity* ptr = entity_hash[ind];
+    //printf("entity_hash[ind] contiene: %s", entity_hash[ind]->id_ent);
+    //printf("ptr punta a: %s", ptr->id_ent);
+
+
+    while(ptr != NULL){
+        printf("verifico che l'entità: %s corrisponda all'entità: %s", id_a, ptr->id_ent);
+        if(strcmp(id_a, ptr->id_ent)==0){
+           entity_a_found = true;
+           printf("[DEBUG] entità A trovata!");
+        }
+
+        if(ptr->next != NULL)
+            ptr = ptr->next;
+        else
+            break;
+    }
+
+    if(!entity_a_found){
+        printf("[DEBUG] entità A non esistente -> non faccio nulla");
+        return false;
+    }
+
+    //save a pointer to ent_A for future use
+    ent_a = ptr;
+    printf("[DEBUG] ent_a ptr -> %s", ent_a->id_ent);
+
+    ind = hash(id_b);
+    ptr = entity_hash[ind];
+
+    while(ptr != NULL){
+        if(strcmp(id_b, ptr->id_ent)==0){
+            entity_b_found = true;
+            printf("[DEBUG] entità B trovata!");
+        }
+        if(ptr->next != NULL)
+            ptr = ptr->next;
+        else
+            break;
+
+    }
+
+    if(!entity_b_found){
+        printf("[DEBUG] entità B non esistente -> non faccio nulla");
+        return false;
+    }
+
+    //save a pointer to ent_B for future use
+    ent_b = ptr;
+    printf("[DEBUG] ent_b ptr -> %s", ent_b->id_ent);
+
+    printf("[DEBUG] Ho trovato entrambe le entità! posso procedere?");
+    return true;
+    /*
+    //1.2 verifico se il tipo di rel esiste già o meno, in caso lo creo
     int i = 0;
     bool found = false;
 
@@ -428,37 +493,6 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
             }
         }
 
-    }
-
-    //1.2 controllo che esistano entità A e B, se una delle 2 non esiste, termina
-    bool entity_a_found = false;
-    bool entity_b_found = false;
-    int ind = hash(id_a);
-
-    entity *ptr = entity_hash[ind];
-
-    do{
-        if(strcmp(id_a, ptr->id_ent)==0){
-            entity_a_found = true;
-        }
-        ptr = ptr->next;
-
-    }while(ptr->next != NULL);
-
-    ind = hash(id_b);
-    ptr = entity_hash[ind];
-
-    do{
-        if(strcmp(id_b, ptr->id_ent)==0){
-            entity_b_found = true;
-        }
-        ptr = ptr->next;
-
-    }while(ptr->next != NULL);
-
-    if(!entity_a_found || !entity_b_found){
-        printf("[DEBUG] una delle due entità non è presenti -> non faccio nulla");
-        return false;
     }
 
     //se a questo punto non ha trovato niente found è false, devo creare il tipo di relazione nell'array
@@ -490,7 +524,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
     //TODO aggiorna la lista max per questo tipo di relazione
 
 
-    return false;
+    return false;*/
 }
 
 bool delRel(){
@@ -519,13 +553,14 @@ void report(){
 
             while (tmp->next != NULL) {
                 if (tmp->id_ent != NULL) {
-                    printf("%s", tmp->id_ent);
+                    printf(" %s ", tmp->id_ent);
                     tmp = tmp->next;
                 }
 
             }
 
-            printf("%s", tmp->id_ent);
+            printf(" %s "
+                   "", tmp->id_ent);
         }
     }
 }
