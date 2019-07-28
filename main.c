@@ -25,6 +25,9 @@
 //relation hash table length
 #define DEF_REL_N 1024
 
+//size for the array of entities who has max inc rel
+#define DEF_MAX_REL_L 12
+
 
 //GLOBAL DATA STRUCTURES
 
@@ -62,14 +65,19 @@ typedef struct relation_t {
     char *id_rel;
 
     //pointer to a dynamic array of pointers to the entities which have the max incoming relationships for this relation type
-    entity *max_inc_rels;
+    entity *max_inc_rels[DEF_MAX_REL_L];
 
     //store the current max number of receiving relations for this type
     int max;
 
-    //pointer to a dynamic array of relation, which stores every single relation of this type
-    relation *relation_hash[DEF_REL_N];
+    //store the index in which the entities have saved this relation inside their counter array
+    int index;
 
+    //hash table hashed by sender name
+    relation *relation_sender_hash[DEF_REL_N];
+
+    //hash table hashed by receiver name
+    relation *relation_receiver_hash[DEF_REL_N];
 
 } relation_t;
 
@@ -298,7 +306,7 @@ bool addEnt(char *str, entity *e) {
         return true;
 
     } else {
-        printf("\n\nentro nell'else!");
+        //printf("\n\nentro nell'else!");
         entity *ptr = entity_hash[index];
 
         printf("ptr-> id: %s", ptr->id_ent);
@@ -472,16 +480,17 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
     ent_b = ptr;
     printf("[DEBUG] ent_b ptr -> %s", ent_b->id_ent);
 
-    printf("[DEBUG] Ho trovato entrambe le entità! posso procedere?");
-    return true;
-    /*
+    //printf("[DEBUG] Ho trovato entrambe le entità! posso procedere?");
+    //return true;
+
     //1.2 verifico se il tipo di rel esiste già o meno, in caso lo creo
+
     int i = 0;
     bool found = false;
 
     for (i = 0; i < DEF_REL_T_L; ++i) {
 
-        if(relation_t_array[i]->id_rel == NULL){
+        if(relation_t_array[i] == NULL){
             //non c'è nessun tipo di relazione
             break;
 
@@ -492,8 +501,9 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
                 break;
             }
         }
-
     }
+
+    //printf("\n[DEBUG] se ha trovato la relazione found: %d", found);
 
     //se a questo punto non ha trovato niente found è false, devo creare il tipo di relazione nell'array
     //altrimenti procedi
@@ -511,20 +521,92 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         relation_t_array[i] = newRelType;
     }
 
-
+    //2 aggiungo la singola relazione alle due hash table di singole relazioni divise per tipo
     relation *newSingleRel;
-    //TODO trova il puntatore all'entità A
-    //TODO aggiungi relazione nell'array di relazione e aggiungi puntatore a entità A in sender
-    //TODO trova il puntatore all'entità B
-    //TODO aggiungi entità B in receiving
-    //relation_t_array[i]->relation_hash[hash(id_a)]->receiving = ; //puntatore all'entità A
+    newSingleRel = (relation*) malloc(sizeof(relation));
+    newSingleRel->sender = ent_a;
+    newSingleRel->receiving = ent_b;
 
+    //i punta al nuovo relation_t o a quello trovato se c'era già
 
-    //TODO aggiorna i contatori delle entità -> ricevente ce l'ho anche già il puntatore, basta aumentare contatore giusto
-    //TODO aggiorna la lista max per questo tipo di relazione
+    int index_a = hash(id_a);
+    //printf("[DEBUG] indice dell'hash table calcolato su questo nome: %d\n", index_a);
 
+    if(relation_t_array[i]->relation_receiver_hash[index_a] == NULL){
+        //if the linked list in this hash index is empty, the entity is not present for sure
+        //printf("entro nell'indice dell'hash table %d che ho trovato vuoto.", index_a);
 
-    return false;*/
+        relation_t_array[i]->relation_receiver_hash[index_a] = newSingleRel;
+
+        //printf("[DEBUG] aggiunta relazione: %s nell'indice %d che era vuoto (no collisioni). ", id_rel, index_a);
+
+    } else {
+        //printf("\n\nentro nell'else!");
+        relation *ptr_a = relation_t_array[i]->relation_receiver_hash[index_a];
+
+        while (ptr_a->next_a != NULL) {
+            ptr_a = ptr_a->next_a;
+        }
+
+        ptr_a->next_a = newSingleRel;
+        newSingleRel->next_a = NULL;
+    }
+
+    int index_b = hash(id_b);
+    //printf("[DEBUG] indice dell'hash table calcolato su questo nome: %d\n", index_b);
+
+    if(relation_t_array[i]->relation_sender_hash[index_b] == NULL){
+        //if the linked list in this hash index is empty, the entity is not present for sure
+        //printf("entro nell'indice dell'hash table %d che ho trovato vuoto.", index_b);
+
+        relation_t_array[i]->relation_receiver_hash[index_b] = newSingleRel;
+
+        //printf("[DEBUG] aggiunta relazione: %s nell'indice %d che era vuoto (no collisioni). ", id_rel, index_b);
+
+    } else {
+        //printf("\n\nentro nell'else!");
+        relation *ptr_b = relation_t_array[i]->relation_receiver_hash[index_b];
+
+        while (ptr_b->next_b != NULL) {
+            ptr_b = ptr_b->next_b;
+        }
+
+        ptr_b->next_b = newSingleRel;
+        newSingleRel->next_b = NULL;
+    }
+
+    //aggiorna i contatori delle entità -> ricevente ce l'ho anche già il puntatore, basta aumentare contatore giusto
+    ent_b->rel_ent_counters[i]++;
+    //mette nel relation type l'integer a cui corrisponde nell'indice dell'array delle entità per questo tipo
+    relation_t_array[i]->index = i;
+
+    //aggiorna la lista max per questo tipo di relazione
+    if(ent_b->rel_ent_counters[i] == relation_t_array[i]->max){
+        //ent_b è uguale al max, aggiungilo all'array senza cancellare gli altri
+
+        //se non c'era nessun altro max inserisci in prima posizione
+        if(relation_t_array[i]->max_inc_rels[0] == NULL){
+            relation_t_array[i]->max_inc_rels[0] = ent_b;
+        } else {
+            //scorri fino a quando non trovi un posto libero e inseriscilo
+            int j = i;
+            while(relation_t_array[j] != NULL){
+                j++;
+            }
+            //TODO attenzione che potrei sforare l'array visto che è statico
+            relation_t_array[i]->max_inc_rels[j] = ent_b;
+        }
+
+    } else if(ent_b->rel_ent_counters[i] > relation_t_array[i]->max){
+        //ent_b il nuovo max, cancella tutti quelli precendeti e aggiungi solo questo alla lista dei max
+        relation_t_array[i]->max_inc_rels[0] = ent_b;
+
+        for (int j = 1; j < DEF_MAX_REL_L; ++j) {
+            relation_t_array[i]->max_inc_rels[j] = NULL;
+        }
+    }
+
+    return true;
 }
 
 bool delRel(){
