@@ -16,7 +16,9 @@
 #define DEF_INPUT_L_INC 16
 
 //entity hash table length
-#define DEF_ENT_N 1024
+#define DEF_ENT_N 100
+//entity dynamic array initial length
+#define DEF_ENT_L 12
 
 //initial relations type array length
 #define DEF_REL_T_L 12
@@ -46,7 +48,9 @@ typedef struct relation{
     //pointer to the entity who is receiving the relation
     entity *receiving;
 
-    struct relation *next;
+    struct relation *next_a;
+
+    struct relation *next_b;
 
 
 }relation;
@@ -70,6 +74,7 @@ typedef struct relation_t {
 } relation_t;
 
 //GLOBAL VARIABLES
+
 //hash table to store the entities
 entity *entity_hash [DEF_ENT_N];
 
@@ -83,7 +88,7 @@ int hash(char *);
 
 bool addEnt(char *, entity*);
 bool delEnt(char *str, entity *entity_arr);
-bool addRel(char *id_rel, char *id_a, char *id_b);
+bool addRel(char *id_a, char *id_b, char *id_rel);
 void report();
 
 
@@ -108,11 +113,14 @@ void main() {
         if(strncmp(input, ADDENT, 6) == 0){
 
             short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
-            strncpy(short_name, input + 7 * sizeof(char), strlen(input) - 7);
+            strncpy(short_name, input + 8 * sizeof(char), strlen(input) - 9);
+            short_name[strlen(input)-9] = '\0';
             printf("\n[DEBUG] Short_name: %s", short_name);
 
             printf("\n[DEBUG]----------------- chiamo addEnt per aggiungere un entità-------------");
             addEnt(short_name, entity_hash[0]);
+
+            free(short_name);
 
         } else if(strncmp(input, DELENT, 6) == 0){
             //TODO remove this entity also from every relation
@@ -127,6 +135,68 @@ void main() {
             printf("[DEBUG] read add rel\n");
 
             //TODO tirare fuori dalla stringa completa: id_rel, id_ent_A, id_ent_B
+            //TODO addRel(id_rel, id_a, id_b);
+            int curr_pos = 8;
+
+            char *ch = &input[8];
+            int i = 0;
+            while(*ch != '"'){
+                ch++;
+                i++;
+            }
+
+            //printf("\ngiro1 i: %d, curr pos: %d", i,curr_pos);
+            //printf("\nadesso ch punta alle virgolette -> %c", *ch);
+
+            //+1 to include \0
+            char *id_a = (char *) malloc(i* sizeof(char) + 1);
+            strncpy(id_a, &input[8], i);
+            id_a[i] = '\0';
+
+            //skip the " " to point to id_b
+            ch = &input[i+3];
+            curr_pos += i + 3;
+            //printf("\nadesso ch punta all'iniziale del 2 nome -> %c", *ch);
+
+            //printf("giro1.1: %d, curr pos: %d", i,curr_pos);
+
+            i = 0;
+            while(*ch != '"'){
+                ch++;
+                i++;
+            }
+
+            //printf("\ngiro2 i: %d, curr pos: %d", i,curr_pos);
+            //printf("\nadesso ch punta alle virgolette del 2 nome -> %c", *ch);
+
+            //+1 to include \0
+            char *id_b = (char *) malloc((i* sizeof(char)) + 1);
+            strncpy(id_b, &input[curr_pos], i);
+            id_b[curr_pos+i] = '\0';
+
+            //skip the " " to point to id_b
+            curr_pos += i + 3;
+            ch = &input[curr_pos];
+
+            //printf("\ngiro2.2: %d, curr pos: %d", i,curr_pos);
+            //printf("\nadesso dovrebbe puntare alla a di amico: %c", input[curr_pos]);
+            //printf("\nanche ch* dovrebbe puntare alla a di amico: %c", *ch);
+
+            i = 0;
+            while(*ch != '"'){
+                ch++;
+                i++;
+            }
+
+
+            //+1 to include \0
+            char *id_rel = (char *) malloc((i* sizeof(char)) + 1);
+            strncpy(id_rel, &input[curr_pos], i);
+            id_rel[curr_pos+i-1] = '\0';
+
+            printf("id_a: %s ", id_a);
+            printf("id_b: %s ", id_b);
+            printf("id_rel: %s ", id_rel);
 
 
         } else if(strncmp(input, DELREL, 6) == 0){
@@ -148,7 +218,6 @@ void main() {
         //de-allocate heap memory used to store string input, since in the next execution the pointer will point to
         //the new string and it will be impossible to eliminate old string from heap
 
-        //TODO forse non servono perchè tanto vengono sovrascritti a ogni giro e mi rallenta
         free(input);
 
     }
@@ -227,10 +296,12 @@ bool addEnt(char *str, entity *e) {
         return true;
 
     } else {
-
+        printf("\n\nentro nell'else!");
         entity *ptr = entity_hash[index];
 
-        do{
+        printf("ptr-> id: %s", ptr->id_ent);
+
+        while(ptr->next != NULL){
             if(strcmp(str, ptr->id_ent)==0){
                 //the entity has already been added, do nothing
                 printf("[DEBUG] entità già presente nella lista. non faccio nulla");
@@ -238,9 +309,10 @@ bool addEnt(char *str, entity *e) {
             }
             ptr = ptr->next;
 
-        }while(ptr->next != NULL);
+        }
 
         //at this point the entity has not been found and at the same time ptr points to the last pos of the linked list
+        printf("[DEBUG] collisione! aggiungo alla lista.");
         entity * newEnt;
         newEnt = (entity *) malloc(sizeof(entity));
 
@@ -251,6 +323,7 @@ bool addEnt(char *str, entity *e) {
         newEnt->next = NULL;
 
         printf("[DEBUG] aggiunta entità: %s nell'indice %d che non era vuoto (si collisioni). ", str, index);
+
         return true;
 
     }
@@ -285,6 +358,7 @@ bool delEnt(char *str, entity *e){
     printf("\ndelent: elimina %s -> index: %d", str, index);
 
     entity *ptr = entity_hash[index];
+    entity *prv = entity_hash[index];
 
     do{
         if(strcmp(str, ptr->id_ent)==0){
@@ -292,9 +366,32 @@ bool delEnt(char *str, entity *e){
             printf("\n[DEBUG] entità da rimuovere trovata!");
             //TODO scorri tutte le relazioni cercando quelle in cui l'utente è il datore o ricevente e eliminale
             //TODO aggiorna i contatori e la lista dei max
+            //TODO rimuovi l'entita dalla hash table delle entità
+
+            //3 casi
+            //A) l'entità da eliminare è il primo della lista
+            //B) l'entità da eliminare è in mezzo alla lista
+            //c) l'entità da eliminare è in fondo alla lista
+
+
+            if(ptr->id_ent == entity_hash[index]->id_ent){
+                printf("entità da eliminare a cui sto puntando: %s", ptr->id_ent);
+                if(ptr-> next != NULL) {
+                    entity_hash[index] = ptr->next;
+                    free(ptr);
+                }
+                //else
+                    //entity_hash[index] = NULL;
+                //free(ptr);
+            } else{
+                prv->next = ptr->next;
+                free(ptr);
+            }
+
             return true;
 
         } else {
+            prv = ptr;
             ptr = ptr->next;
         }
 
@@ -306,7 +403,7 @@ bool delEnt(char *str, entity *e){
 
 }
 
-bool addRel(char *id_rel, char *id_a, char *id_b){
+bool addRel(char *id_a, char *id_b, char *id_rel){
 
     // 1.1 verifica che id_rel esista già o meno -> se non esiste creala
     // 1.2 verifica che esistano entrambe le entità -> datore e ricevente
@@ -381,12 +478,12 @@ bool addRel(char *id_rel, char *id_a, char *id_b){
     }
 
 
+    relation *newSingleRel;
     //TODO trova il puntatore all'entità A
     //TODO aggiungi relazione nell'array di relazione e aggiungi puntatore a entità A in sender
     //TODO trova il puntatore all'entità B
     //TODO aggiungi entità B in receiving
     //relation_t_array[i]->relation_hash[hash(id_a)]->receiving = ; //puntatore all'entità A
-    relation *newSingleRel;
 
 
     //TODO aggiorna i contatori delle entità -> ricevente ce l'ho anche già il puntatore, basta aumentare contatore giusto
@@ -410,5 +507,25 @@ bool delRel(){
 
 void report(){
 
-    //TODO
+    printf("[DEBUG] Lista entità aggiunte: ");
+    entity *tmp;
+
+    for (int i = 0; i < DEF_ENT_N; ++i) {
+
+        //printf("\nhash[%d]", i);
+
+        if(entity_hash[i] != NULL) {
+            tmp = entity_hash[i];
+
+            while (tmp->next != NULL) {
+                if (tmp->id_ent != NULL) {
+                    printf("%s", tmp->id_ent);
+                    tmp = tmp->next;
+                }
+
+            }
+
+            printf("%s", tmp->id_ent);
+        }
+    }
 }
