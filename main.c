@@ -97,6 +97,7 @@ int hash(char *);
 bool addEnt(char *, entity*);
 bool delEnt(char *str, entity *entity_arr);
 bool addRel(char *id_a, char *id_b, char *id_rel);
+bool delRel(char *id_a, char *id_b, char *id_rel);
 void report();
 
 
@@ -212,6 +213,73 @@ void main() {
         } else if(strncmp(input, DELREL, 6) == 0){
             printf("[DEBUG] read del rel\n");
 
+            int curr_pos = 8;
+
+            char *ch = &input[8];
+            int i = 0;
+            while(*ch != '"'){
+                ch++;
+                i++;
+            }
+
+            //printf("\ngiro1 i: %d, curr pos: %d", i,curr_pos);
+            //printf("\nadesso ch punta alle virgolette -> %c", *ch);
+
+            //+1 to include \0
+            char *id_a = (char *) malloc(i* sizeof(char) + 1);
+            strncpy(id_a, &input[8], i+1);
+            id_a[i] = '\0';
+            //printf("\nid_a: %s", id_a);
+
+            //skip the " " to point to id_b
+            ch = &input[i+11];
+            curr_pos += i + 3;
+            //printf("\nadesso ch punta all'iniziale del 2 nome -> %c", *ch);
+
+            //printf("\ngiro1.1: %d, curr pos: %d", i,curr_pos);
+
+            i = 0;
+            while(*ch != '"'){
+                ch++;
+                i++;
+            }
+
+            //printf("\ngiro2 i: %d, curr pos: %d", i,curr_pos);
+            //printf("\nadesso ch punta alle virgolette del 2 nome -> %c", *ch);
+
+            //+1 to include \0
+            char *id_b = (char *) malloc((i* sizeof(char)) + 1);
+            strncpy(id_b, &input[curr_pos], i);
+            id_b[curr_pos+i] = '\0';
+            //printf("\nid_b: %s", id_b);
+
+            //skip the " " to point to id_b
+            curr_pos += i + 3;
+            ch = &input[curr_pos];
+
+            //printf("\ngiro2.2: %d, curr pos: %d", i,curr_pos);
+            //printf("\nadesso dovrebbe puntare alla a di amico: %c", input[curr_pos]);
+            //printf("\nanche ch* dovrebbe puntare alla a di amico: %c", *ch);
+
+            i = 0;
+            while(*ch != '"'){
+                ch++;
+                i++;
+            }
+
+
+            //+1 to include \0
+            char *id_rel = (char *) malloc((i* sizeof(char)) + 1);
+            strncpy(id_rel, &input[curr_pos], i);
+            id_rel[curr_pos+i-1] = '\0';
+
+            printf("\nid_a: %s ", id_a);
+            printf("id_b: %s ", id_b);
+            printf("id_rel: %s ", id_rel);
+
+            //TODO delRel(id_rel, id_a, id_b);
+            delRel(id_a, id_b, id_rel);
+
         } else if(strncmp(input, REPORT, 6) == 0){
             printf("[DEBUG] read repo\n");
             report();
@@ -298,6 +366,10 @@ bool addEnt(char *str, entity *e) {
         newEnt->id_ent = (char*) malloc(sizeof(str));
         strcpy(newEnt->id_ent, str);
         newEnt->next = NULL;
+
+        for (int i = 0; i < DEF_MAX_REL_L; ++i) {
+            newEnt->rel_ent_counters[i] = 0;
+        }
 
         entity_hash[index] = newEnt;
 
@@ -519,6 +591,10 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         newRelType->max = 0;
 
         relation_t_array[i] = newRelType;
+
+        for (int j = 0; j < DEF_MAX_REL_L; ++j) {
+            relation_t_array[i]->max_inc_rels[j] = 0;
+        }
     }
 
     //2 aggiungo la singola relazione alle due hash table di singole relazioni divise per tipo
@@ -526,6 +602,8 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
     newSingleRel = (relation*) malloc(sizeof(relation));
     newSingleRel->sender = ent_a;
     newSingleRel->receiving = ent_b;
+    newSingleRel->next_a = NULL;
+    newSingleRel->next_b = NULL;
 
     //i punta al nuovo relation_t o a quello trovato se c'era già
 
@@ -541,21 +619,25 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         //printf("[DEBUG] aggiunta relazione: %s nell'indice %d che era vuoto (no collisioni). ", id_rel, index_a);
 
     } else {
-        //printf("\n\nentro nell'else!");
+        printf("----------------------------------------------------------entro nell'else!");
+
         relation *ptr_a = relation_t_array[i]->relation_receiver_hash[index_a];
 
         while (ptr_a->next_a != NULL) {
             ptr_a = ptr_a->next_a;
         }
 
-        ptr_a = newSingleRel;
+        ptr_a->next_a = newSingleRel;
         newSingleRel->next_a = NULL;
     }
+    printf("-----------------------esco dall'else");
+
 
     int index_b = hash(id_b);
-    //printf("[DEBUG] indice dell'hash table calcolato su questo nome: %d\n", index_b);
+    printf("[DEBUG] indice dell'hash table calcolato su questo nome: %d\n", index_b);
 
     if(relation_t_array[i]->relation_sender_hash[index_b] == NULL){
+        printf("entro nell'if");
         //if the linked list in this hash index is empty, the entity is not present for sure
         //printf("entro nell'indice dell'hash table %d che ho trovato vuoto.", index_b);
 
@@ -564,15 +646,16 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         //printf("[DEBUG] aggiunta relazione: %s nell'indice %d che era vuoto (no collisioni). ", id_rel, index_b);
 
     } else {
-        //printf("\n\nentro nell'else!");
+        printf("\n\nentro nell'else!");
+
         relation *ptr_b = relation_t_array[i]->relation_receiver_hash[index_b];
 
         while (ptr_b->next_b != NULL) {
             ptr_b = ptr_b->next_b;
         }
 
-        ptr_b = newSingleRel;
-        newSingleRel->next_b = NULL;
+        ptr_b->next_b = newSingleRel;
+        //newSingleRel->next_b = NULL;
     }
 
     //aggiorna i contatori delle entità -> ricevente ce l'ho anche già il puntatore, basta aumentare contatore giusto
@@ -593,12 +676,21 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
             relation_t_array[i]->max_inc_rels[0] = ent_b;
         } else {
             //scorri fino a quando non trovi un posto libero e inseriscilo
-            int j = i;
-            while(relation_t_array[j] != NULL){
+
+            int j = 0;
+            bool alreadyInMax = false;
+            while(relation_t_array[i]->max_inc_rels[j] != NULL){
+                if (strcmp(relation_t_array[i]->max_inc_rels[j]->id_ent, ent_b->id_ent) == 0) {
+                    alreadyInMax = true;
+                    break;
+                }
                 j++;
             }
             //TODO attenzione che potrei sforare l'array visto che è statico
-            relation_t_array[i]->max_inc_rels[j] = ent_b;
+
+            if(!alreadyInMax) {
+                relation_t_array[i]->max_inc_rels[j] = ent_b;
+            }
         }
 
     } else if(ent_b->rel_ent_counters[i] > relation_t_array[i]->max){
@@ -613,9 +705,13 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
     return true;
 }
 
-bool delRel(){
+bool delRel(char *id_a, char *id_b, char *id_rel){
 
     // 1 verifica che ci sia una relazione tra le 2 entità A e B
+    // 1.1 verificare che relazione esista
+    // 1.2 verificare che entità A esista
+    // 1.3 verificare che entità B esista
+    // 1.4 verificare che la relazione esista
     // 2.1 se non c'è -> non fa nulla
     // 2.2 se c'è -> elimina la relazione; aggiorna contatori entità e lista max
     //          2.2B se era l'ultima relazione rimasta di quel tipo, cancella anche il tipo di relazione
@@ -658,11 +754,18 @@ void report() {
     for (int i = 0; i < DEF_REL_T_L; ++i) {
         if (relation_t_array[i] != NULL) {
             printf("\"%s\" ", relation_t_array[i]->id_rel);
-            printf("\"%s\" %d;", relation_t_array[i]->max_inc_rels[0]->id_ent, relation_t_array[i]->max);
+            int j = 0;
+            while(relation_t_array[i]->max_inc_rels[j] != NULL){
+                printf("\"%s\" ", relation_t_array[i]->max_inc_rels[j]->id_ent);
+                j++;
+            }
+            printf("%d;", relation_t_array[i]->max);
         }
 
-        if(relation_t_array[i+1] != NULL){
-            printf(" ");
+        if(i < DEF_REL_T_L) {
+            if (relation_t_array[i + 1] != NULL) {
+                printf(" ");
+            }
         }
     }
 
