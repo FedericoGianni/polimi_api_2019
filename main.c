@@ -548,7 +548,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
             ptr_a = ptr_a->next_a;
         }
 
-        ptr_a->next_a = newSingleRel;
+        ptr_a = newSingleRel;
         newSingleRel->next_a = NULL;
     }
 
@@ -571,7 +571,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
             ptr_b = ptr_b->next_b;
         }
 
-        ptr_b->next_b = newSingleRel;
+        ptr_b = newSingleRel;
         newSingleRel->next_b = NULL;
     }
 
@@ -659,6 +659,10 @@ void report() {
         if (relation_t_array[i] != NULL) {
             printf("\"%s\" ", relation_t_array[i]->id_rel);
             printf("\"%s\" %d;", relation_t_array[i]->max_inc_rels[0]->id_ent, relation_t_array[i]->max);
+        }
+
+        if(relation_t_array[i+1] != NULL){
+            printf(" ");
         }
     }
 
