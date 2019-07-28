@@ -579,6 +579,10 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
     ent_b->rel_ent_counters[i]++;
     //mette nel relation type l'integer a cui corrisponde nell'indice dell'array delle entità per questo tipo
     relation_t_array[i]->index = i;
+    //aggiorna il max del tipo di relazione se necessario
+    if(ent_b->rel_ent_counters[i] > relation_t_array[i]->max){
+        relation_t_array[i]->max = ent_b->rel_ent_counters[i];
+    }
 
     //aggiorna la lista max per questo tipo di relazione
     if(ent_b->rel_ent_counters[i] == relation_t_array[i]->max){
@@ -621,8 +625,8 @@ bool delRel(){
     return false;
 }
 
-void report(){
-
+void report() {
+    /*
     printf("[DEBUG] Lista entità aggiunte: ");
     entity *tmp;
 
@@ -644,5 +648,26 @@ void report(){
             printf(" %s "
                    "", tmp->id_ent);
         }
+    }*/
+
+    //format: esempi
+    // "amico_di" "bruno" 2; "compagno_di" "dario" 1;
+    // "amico_di" "bruno" 2; "compagno_di" "alice" "dario" 1;
+
+
+    for (int i = 0; i < DEF_REL_T_L; ++i) {
+        if (relation_t_array[i] != NULL) {
+            printf("\"%s\" ", relation_t_array[i]->id_rel);
+            printf("\"%s\" %d;", relation_t_array[i]->max_inc_rels[0]->id_ent, relation_t_array[i]->max);
+        }
     }
+
+    //TODO valutare caso in cui ci sono piu di un max con lo stesso numero di relazioni entranti
+    /*
+    int j = 0;
+    while(relation_t_array[i]->max_inc_rels[j] != NULL){
+        printf("\"%s\" %d;", relation_t_array[i]->max_inc_rels[j]->id_ent, relation_t_array[i]->max);
+        j++;
+    }*/
+
 }
