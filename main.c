@@ -101,6 +101,8 @@ bool delEnt(char *str, entity *entity_arr);
 bool addRel(char *id_a, char *id_b, char *id_rel);
 bool delRel(char *id_a, char *id_b, char *id_rel);
 void report();
+//just for debugging
+void print();
 
 
 void main() {
@@ -289,6 +291,7 @@ void main() {
 
         } else if(strncmp(input, REPORT, 6) == 0){
             //printf("[DEBUG] read repo\n");
+            print();
             report();
 
         } else if(strncmp(input, END, 3) == 0){
@@ -524,6 +527,11 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         if(strcmp(id_a, ptr->id_ent)==0){
            entity_a_found = true;
            //printf("[DEBUG] entità A trovata!");
+
+            //save a pointer to ent_A for future use
+            ent_a = ptr;
+            //printf("[DEBUG] ent_a ptr -> %s", ent_a->id_ent);
+
         }
 
         if(ptr->next != NULL)
@@ -537,9 +545,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         return false;
     }
 
-    //save a pointer to ent_A for future use
-    ent_a = ptr;
-    //printf("[DEBUG] ent_a ptr -> %s", ent_a->id_ent);
+
 
     ind = hash(id_b);
     ptr = entity_hash[ind];
@@ -548,7 +554,14 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         if(strcmp(id_b, ptr->id_ent)==0){
             entity_b_found = true;
             //printf("[DEBUG] entità B trovata!");
+
+            //save a pointer to ent_B for future use
+            ent_b = ptr;
+            //printf("[DEBUG] ent_b ptr -> %s", ent_b->id_ent);
         }
+
+
+
         if(ptr->next != NULL)
             ptr = ptr->next;
         else
@@ -560,10 +573,6 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         //printf("[DEBUG] entità B non esistente -> non faccio nulla");
         return false;
     }
-
-    //save a pointer to ent_B for future use
-    ent_b = ptr;
-    //printf("[DEBUG] ent_b ptr -> %s", ent_b->id_ent);
 
     //printf("[DEBUG] Ho trovato entrambe le entità! posso procedere?");
     //return true;
@@ -746,30 +755,6 @@ bool delRel(char *id_a, char *id_b, char *id_rel){
 }
 
 void report() {
-    /*
-    printf("[DEBUG] Lista entità aggiunte: ");
-    entity *tmp;
-
-    for (int i = 0; i < DEF_ENT_N; ++i) {
-
-        //printf("\nhash[%d]", i);
-
-        if(entity_hash[i] != NULL) {
-            tmp = entity_hash[i];
-
-            while (tmp->next != NULL) {
-                if (tmp->id_ent != NULL) {
-                    printf(" %s ", tmp->id_ent);
-                    tmp = tmp->next;
-                }
-
-            }
-
-            printf(" %s "
-                   "", tmp->id_ent);
-        }
-    }*/
-
     //format: esempi
     // "amico_di" "bruno" 2; "compagno_di" "dario" 1;
     // "amico_di" "bruno" 2; "compagno_di" "alice" "dario" 1;
@@ -814,6 +799,65 @@ void report() {
         j++;
     }*/
 
+}
+
+void print(){
+
+    /*
+    printf("[DEBUG] Lista entità aggiunte: ");
+    entity *tmp;
+
+    for (int i = 0; i < DEF_ENT_N; ++i) {
+
+        //printf("\nhash[%d]", i);
+
+        if(entity_hash[i] != NULL) {
+            tmp = entity_hash[i];
+
+            while (tmp->next != NULL) {
+                if (tmp->id_ent != NULL) {
+                    printf(" %s ", tmp->id_ent);
+                    tmp = tmp->next;
+                }
+
+            }
+
+            printf(" %s "
+                   "", tmp->id_ent);
+        }
+    }*/
+
+    for (int l = 0; l < DEF_REL_T_L; ++l) {
+
+        if(relation_t_array[l] != NULL) {
+            printf("\n[DEBUG] stato delle hash table del tipo di rel: %d: %s", l, relation_t_array[l]->id_rel);
+            for (int k = 0; k < DEF_REL_N; ++k) {
+                //scorri k-esima posizione della hash table
+                if (relation_t_array[l]->relation_sender_hash[k] != NULL) {
+
+                    relation* ptr = relation_t_array[l]->relation_receiver_hash[k];
+                    while(ptr != NULL){
+                        printf("\nhash_table_sender[%d]: ", k);
+                        printf("\nid_datore: %s", ptr->sender->id_ent);
+                        printf("\nid_ricevente: %s", ptr->receiving->id_ent);
+                        ptr = ptr->next_a;
+                    }
+                }
+
+                if (relation_t_array[l]->relation_receiver_hash[k] != NULL) {
+
+                    relation *ptr = relation_t_array[l]->relation_receiver_hash[k];
+                    while (ptr != NULL) {
+                        printf("\nhash_table_receiver[%d]: ", k);
+                        printf("\nid_datore: %s", ptr->sender->id_ent);
+                        printf("\nid_ricevente: %s", ptr->receiving->id_ent);
+                        ptr = ptr->next_b;
+                    }
+                }
+
+            }
+        }
+    }
 }
 
 void sort_rel_t_array(){
