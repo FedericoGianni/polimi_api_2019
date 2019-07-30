@@ -11,8 +11,8 @@
 #define END "end"
 
 //initial input line length
-#define DEF_INPUT_L 1024
-#define DEF_SHORT_NAME_L 56
+#define DEF_INPUT_L 100
+#define DEF_SHORT_NAME_L 90
 //input length increment
 #define DEF_INPUT_L_INC 16
 
@@ -186,7 +186,7 @@ void main() {
             //+1 to include \0
             char *id_b = (char *) malloc((i* sizeof(char)) + 1);
             strncpy(id_b, &input[curr_pos], i);
-            id_b[curr_pos+i] = '\0';
+            id_b[i] = '\0';
             //printf("\nid_b: %s", id_b);
 
             //skip the " " to point to id_b
@@ -207,7 +207,7 @@ void main() {
             //+1 to include \0
             char *id_rel = (char *) malloc((i* sizeof(char)) + 1);
             strncpy(id_rel, &input[curr_pos], i);
-            id_rel[curr_pos+i-1] = '\0';
+            id_rel[i] = '\0';
 
             //printf("\nid_a: %s ", id_a);
             //printf("id_b: %s ", id_b);
@@ -370,8 +370,9 @@ bool addEnt(char *str, entity *e) {
         entity * newEnt;
         newEnt = (entity *) malloc(sizeof(entity));
 
-        newEnt->id_ent = (char*) malloc(sizeof(str));
+        newEnt->id_ent = (char*) malloc(sizeof(char)*(strlen(str)+1));
         strcpy(newEnt->id_ent, str);
+        strcat(newEnt->id_ent, "\0");
         newEnt->next = NULL;
 
         for (int i = 0; i < DEF_MAX_REL_L; ++i) {
@@ -405,11 +406,16 @@ bool addEnt(char *str, entity *e) {
         entity * newEnt;
         newEnt = (entity *) malloc(sizeof(entity));
 
-        newEnt->id_ent = (char*) malloc(sizeof(str));
+        newEnt->id_ent = (char*) malloc(sizeof(char)*(strlen(str)+1));
         strcpy(newEnt->id_ent, str);
+        strcat(newEnt->id_ent, "\0");
 
         ptr->next = newEnt;
         newEnt->next = NULL;
+
+        for (int i = 0; i < DEF_MAX_REL_L; ++i) {
+            newEnt->rel_ent_counters[i] = 0;
+        }
 
         //printf("[DEBUG] aggiunta entità: %s nell'indice %d che non era vuoto (si collisioni). ", str, index);
 
@@ -593,14 +599,22 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         relation_t *newRelType;
         newRelType = (relation_t*) malloc(sizeof(relation_t));
 
-        newRelType->id_rel = (char *) malloc(sizeof(id_rel));
+        newRelType->id_rel = (char *) malloc(sizeof(char)*(strlen(id_rel)+1));
         strcpy(newRelType->id_rel, id_rel);
+        strcat(newRelType->id_rel, "\0");
         newRelType->max = 0;
 
         relation_t_array[i] = newRelType;
 
+        //initialize with default values to avoid errors
         for (int j = 0; j < DEF_MAX_REL_L; ++j) {
             relation_t_array[i]->max_inc_rels[j] = 0;
+        }
+
+        //initialize hash tables all to null
+        for (int j = 0; j < DEF_REL_N; ++j) {
+            newRelType->relation_sender_hash[j] = NULL;
+            newRelType->relation_receiver_hash[j] = NULL;
         }
 
         //sort the relation_type array in alphabetical order
