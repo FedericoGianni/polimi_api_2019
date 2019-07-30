@@ -12,6 +12,7 @@
 
 //initial input line length
 #define DEF_INPUT_L 1024
+#define DEF_SHORT_NAME_L 56
 //input length increment
 #define DEF_INPUT_L_INC 16
 
@@ -107,37 +108,40 @@ void main() {
     bool end = false;
 
     //dynamic array to read input lines
-    char *input;
+    char input[DEF_INPUT_L];
+
+    char *input_b = &input[0];
+
+    size_t buffer_size = DEF_INPUT_L;
+    size_t *buff_size_ptr = &buffer_size;
 
     //input without "" and other shit
-    char *short_name;
+    char short_name[DEF_SHORT_NAME_L];
 
     while(!end){
 
         //read input from stdin, line by line allocating a dynamic array for each line
-        //scanf("%s", input);
-        input = inputString(stdin, DEF_INPUT_L);
+        getline(&input_b, buff_size_ptr, stdin);
+        //input = inputString(stdin, DEF_INPUT_L);
 
         //printf("\n[DEBUG] Letta la stringa: %s", input);
 
-
         if(strncmp(input, ADDENT, 6) == 0){
 
-            short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
-            strncpy(short_name, input + 8 * sizeof(char), strlen(input) - 9);
-            short_name[strlen(input)-9] = '\0';
+            //short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
+            strncpy(short_name, &input[8], strlen(input) - 10);
+            short_name[strlen(input)-10] = '\0';
             //printf("\n[DEBUG] Short_name: %s", short_name);
-
 
             //printf("\n[DEBUG]----------------- chiamo addEnt per aggiungere un entità-------------");
             addEnt(short_name, entity_hash[0]);
 
-            free(short_name);
+            //free(short_name);
 
         } else if(strncmp(input, DELENT, 6) == 0){
             //TODO remove this entity also from every relation
             //printf("[DEBUG] read deleent\n");
-            short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
+            //short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
             strncpy(short_name, input + 7 * sizeof(char), strlen(input) - 7);
             //printf("\n[DEBUG] Short_name: %s", short_name);
             delEnt(short_name, entity_hash[0]);
