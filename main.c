@@ -93,6 +93,7 @@ relation_t *relation_t_array[DEF_REL_T_L];
 char *inputString(FILE *,int);
 
 int hash(char *);
+void sort_rel_t_array();
 
 bool addEnt(char *, entity*);
 bool delEnt(char *str, entity *entity_arr);
@@ -114,9 +115,10 @@ void main() {
     while(!end){
 
         //read input from stdin, line by line allocating a dynamic array for each line
+        //scanf("%s", input);
         input = inputString(stdin, DEF_INPUT_L);
 
-        printf("\n[DEBUG] Letta la stringa: %s", input);
+        //printf("\n[DEBUG] Letta la stringa: %s", input);
 
 
         if(strncmp(input, ADDENT, 6) == 0){
@@ -124,24 +126,25 @@ void main() {
             short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
             strncpy(short_name, input + 8 * sizeof(char), strlen(input) - 9);
             short_name[strlen(input)-9] = '\0';
-            printf("\n[DEBUG] Short_name: %s", short_name);
+            //printf("\n[DEBUG] Short_name: %s", short_name);
 
-            printf("\n[DEBUG]----------------- chiamo addEnt per aggiungere un entità-------------");
+
+            //printf("\n[DEBUG]----------------- chiamo addEnt per aggiungere un entità-------------");
             addEnt(short_name, entity_hash[0]);
 
             free(short_name);
 
         } else if(strncmp(input, DELENT, 6) == 0){
             //TODO remove this entity also from every relation
-            printf("[DEBUG] read deleent\n");
+            //printf("[DEBUG] read deleent\n");
             short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
             strncpy(short_name, input + 7 * sizeof(char), strlen(input) - 7);
-            printf("\n[DEBUG] Short_name: %s", short_name);
+            //printf("\n[DEBUG] Short_name: %s", short_name);
             delEnt(short_name, entity_hash[0]);
 
 
         } else if(strncmp(input, ADDREL, 6) == 0){
-            printf("\n[DEBUG] read add rel\n");
+            //printf("\n[DEBUG] read add rel\n");
             int curr_pos = 8;
 
             char *ch = &input[8];
@@ -202,16 +205,16 @@ void main() {
             strncpy(id_rel, &input[curr_pos], i);
             id_rel[curr_pos+i-1] = '\0';
 
-            printf("\nid_a: %s ", id_a);
-            printf("id_b: %s ", id_b);
-            printf("id_rel: %s ", id_rel);
+            //printf("\nid_a: %s ", id_a);
+            //printf("id_b: %s ", id_b);
+            //printf("id_rel: %s ", id_rel);
 
             //TODO addRel(id_rel, id_a, id_b);
             addRel(id_a, id_b, id_rel);
 
 
         } else if(strncmp(input, DELREL, 6) == 0){
-            printf("[DEBUG] read del rel\n");
+            //printf("[DEBUG] read del rel\n");
 
             int curr_pos = 8;
 
@@ -273,19 +276,19 @@ void main() {
             strncpy(id_rel, &input[curr_pos], i);
             id_rel[curr_pos+i-1] = '\0';
 
-            printf("\nid_a: %s ", id_a);
-            printf("id_b: %s ", id_b);
-            printf("id_rel: %s ", id_rel);
+            //printf("\nid_a: %s ", id_a);
+            //printf("id_b: %s ", id_b);
+            //printf("id_rel: %s ", id_rel);
 
             //TODO delRel(id_rel, id_a, id_b);
             delRel(id_a, id_b, id_rel);
 
         } else if(strncmp(input, REPORT, 6) == 0){
-            printf("[DEBUG] read repo\n");
+            //printf("[DEBUG] read repo\n");
             report();
 
         } else if(strncmp(input, END, 3) == 0){
-            printf("[DEBUG] end!");
+            //printf("[DEBUG] end!");
             end = true;
 
         } else {
@@ -296,7 +299,7 @@ void main() {
         //de-allocate heap memory used to store string input, since in the next execution the pointer will point to
         //the new string and it will be impossible to eliminate old string from heap
 
-        free(input);
+        //free(input);
 
     }
 }
@@ -355,11 +358,11 @@ char *replace_char_arr(char *str, int l_max, int inc) {
 bool addEnt(char *str, entity *e) {
 
     int index = hash(str);
-    printf("[DEBUG] indice dell'hash table calcolato su questo nome: %d\n", index);
+    //printf("[DEBUG] indice dell'hash table calcolato su questo nome: %d\n", index);
 
     if(entity_hash[index] == NULL){
         //if the linked list in this hash index is empty, the entity is not present for sure
-        printf("entro nell'indice dell'hash table %d che ho trovato vuoto.", index);
+        //printf("entro nell'indice dell'hash table %d che ho trovato vuoto.", index);
         entity * newEnt;
         newEnt = (entity *) malloc(sizeof(entity));
 
@@ -374,19 +377,19 @@ bool addEnt(char *str, entity *e) {
         entity_hash[index] = newEnt;
 
 
-        printf("[DEBUG] aggiunta entità: %s nell'indice %d che era vuoto (no collisioni). ", str, index);
+        //printf("[DEBUG] aggiunta entità: %s nell'indice %d che era vuoto (no collisioni). ", str, index);
         return true;
 
     } else {
         //printf("\n\nentro nell'else!");
         entity *ptr = entity_hash[index];
 
-        printf("ptr-> id: %s", ptr->id_ent);
+        //printf("ptr-> id: %s", ptr->id_ent);
 
         while(ptr->next != NULL){
             if(strcmp(str, ptr->id_ent)==0){
                 //the entity has already been added, do nothing
-                printf("[DEBUG] entità già presente nella lista. non faccio nulla");
+                //printf("[DEBUG] entità già presente nella lista. non faccio nulla");
                 return false;
             }
             ptr = ptr->next;
@@ -394,7 +397,7 @@ bool addEnt(char *str, entity *e) {
         }
 
         //at this point the entity has not been found and at the same time ptr points to the last pos of the linked list
-        printf("[DEBUG] collisione! aggiungo alla lista.");
+        //printf("[DEBUG] collisione! aggiungo alla lista.");
         entity * newEnt;
         newEnt = (entity *) malloc(sizeof(entity));
 
@@ -404,7 +407,7 @@ bool addEnt(char *str, entity *e) {
         ptr->next = newEnt;
         newEnt->next = NULL;
 
-        printf("[DEBUG] aggiunta entità: %s nell'indice %d che non era vuoto (si collisioni). ", str, index);
+        //printf("[DEBUG] aggiunta entità: %s nell'indice %d che non era vuoto (si collisioni). ", str, index);
 
         return true;
 
@@ -499,7 +502,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
     entity* ent_b;
     int ind = hash(id_a);
 
-    printf("\n\nindex restituito da hash(%s): %d", id_a, ind);
+    //printf("\n\nindex restituito da hash(%s): %d", id_a, ind);
 
     entity* ptr = entity_hash[ind];
     //printf("entity_hash[ind] contiene: %s", entity_hash[ind]->id_ent);
@@ -507,10 +510,10 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
 
 
     while(ptr != NULL){
-        printf("verifico che l'entità: %s corrisponda all'entità: %s", id_a, ptr->id_ent);
+        //printf("verifico che l'entità: %s corrisponda all'entità: %s", id_a, ptr->id_ent);
         if(strcmp(id_a, ptr->id_ent)==0){
            entity_a_found = true;
-           printf("[DEBUG] entità A trovata!");
+           //printf("[DEBUG] entità A trovata!");
         }
 
         if(ptr->next != NULL)
@@ -520,13 +523,13 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
     }
 
     if(!entity_a_found){
-        printf("[DEBUG] entità A non esistente -> non faccio nulla");
+        //printf("[DEBUG] entità A non esistente -> non faccio nulla");
         return false;
     }
 
     //save a pointer to ent_A for future use
     ent_a = ptr;
-    printf("[DEBUG] ent_a ptr -> %s", ent_a->id_ent);
+    //printf("[DEBUG] ent_a ptr -> %s", ent_a->id_ent);
 
     ind = hash(id_b);
     ptr = entity_hash[ind];
@@ -534,7 +537,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
     while(ptr != NULL){
         if(strcmp(id_b, ptr->id_ent)==0){
             entity_b_found = true;
-            printf("[DEBUG] entità B trovata!");
+            //printf("[DEBUG] entità B trovata!");
         }
         if(ptr->next != NULL)
             ptr = ptr->next;
@@ -544,13 +547,13 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
     }
 
     if(!entity_b_found){
-        printf("[DEBUG] entità B non esistente -> non faccio nulla");
+        //printf("[DEBUG] entità B non esistente -> non faccio nulla");
         return false;
     }
 
     //save a pointer to ent_B for future use
     ent_b = ptr;
-    printf("[DEBUG] ent_b ptr -> %s", ent_b->id_ent);
+    //printf("[DEBUG] ent_b ptr -> %s", ent_b->id_ent);
 
     //printf("[DEBUG] Ho trovato entrambe le entità! posso procedere?");
     //return true;
@@ -595,6 +598,9 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         for (int j = 0; j < DEF_MAX_REL_L; ++j) {
             relation_t_array[i]->max_inc_rels[j] = 0;
         }
+
+        //sort the relation_type array in alphabetical order
+        sort_rel_t_array();
     }
 
     //2 aggiungo la singola relazione alle due hash table di singole relazioni divise per tipo
@@ -619,7 +625,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         //printf("[DEBUG] aggiunta relazione: %s nell'indice %d che era vuoto (no collisioni). ", id_rel, index_a);
 
     } else {
-        printf("----------------------------------------------------------entro nell'else!");
+        //printf("----------------------------------------------------------entro nell'else!");
 
         relation *ptr_a = relation_t_array[i]->relation_receiver_hash[index_a];
 
@@ -630,14 +636,14 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         ptr_a->next_a = newSingleRel;
         newSingleRel->next_a = NULL;
     }
-    printf("-----------------------esco dall'else");
+    //printf("-----------------------esco dall'else");
 
 
     int index_b = hash(id_b);
-    printf("[DEBUG] indice dell'hash table calcolato su questo nome: %d\n", index_b);
+    //printf("[DEBUG] indice dell'hash table calcolato su questo nome: %d\n", index_b);
 
     if(relation_t_array[i]->relation_sender_hash[index_b] == NULL){
-        printf("entro nell'if");
+        //printf("entro nell'if");
         //if the linked list in this hash index is empty, the entity is not present for sure
         //printf("entro nell'indice dell'hash table %d che ho trovato vuoto.", index_b);
 
@@ -646,7 +652,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         //printf("[DEBUG] aggiunta relazione: %s nell'indice %d che era vuoto (no collisioni). ", id_rel, index_b);
 
     } else {
-        printf("\n\nentro nell'else!");
+        //printf("\n\nentro nell'else!");
 
         relation *ptr_b = relation_t_array[i]->relation_receiver_hash[index_b];
 
@@ -750,9 +756,15 @@ void report() {
     // "amico_di" "bruno" 2; "compagno_di" "dario" 1;
     // "amico_di" "bruno" 2; "compagno_di" "alice" "dario" 1;
 
-
-    for (int i = 0; i < DEF_REL_T_L; ++i) {
+    int i;
+    bool none = true;
+    for (i = 0; i < DEF_REL_T_L; ++i) {
         if (relation_t_array[i] != NULL) {
+            none = false;
+            if(i != 0){
+                printf(" ");
+            }
+
             printf("\"%s\" ", relation_t_array[i]->id_rel);
             int j = 0;
             while(relation_t_array[i]->max_inc_rels[j] != NULL){
@@ -762,12 +774,19 @@ void report() {
             printf("%d;", relation_t_array[i]->max);
         }
 
-        if(i < DEF_REL_T_L) {
-            if (relation_t_array[i + 1] != NULL) {
-                printf(" ");
-            }
-        }
+        //if(i < DEF_REL_T_L) {
+         //   if (relation_t_array[i + 1] != NULL) {
+          //      printf(" ");
+           // }
+        //}
+
     }
+    //TODO se non c'è niente va stampato none
+    if(none){
+        printf("none");
+    }
+
+    printf("\n");
 
     //TODO valutare caso in cui ci sono piu di un max con lo stesso numero di relazioni entranti
     /*
@@ -777,4 +796,62 @@ void report() {
         j++;
     }*/
 
+}
+
+void sort_rel_t_array(){
+
+    //insertion sort -> could be improved but it wont impact that much because there are just a few rel_types
+    //if need little time improvement could improve this function
+
+    //printf("\n[DEBUG] chiamato sort relation type array!");
+
+    int i = 1;
+    while (i < DEF_REL_T_L){
+
+        int j = i;
+
+        if(relation_t_array[j] == NULL || relation_t_array[j-1] == NULL){
+            return;
+        }
+        /*
+        printf("\n--------------INITIAL--------------");
+        printf("\n\trelation_t_array[0]->id_rel: %s", relation_t_array[0]->id_rel);
+        printf("\n\trelation_t_array[1]->id_rel: %s\n", relation_t_array[1]->id_rel);
+         */
+
+
+        //k è l'indice della prima lettera diversa per le 2 relazioni che sto confrontando
+        int k = 0;
+
+        while(k < strlen(relation_t_array[j-1]->id_rel) && k < strlen(relation_t_array[j]->id_rel)){
+            if ((int) relation_t_array[j - 1]->id_rel[k] == (int) relation_t_array[j]->id_rel[k]) {
+                k++;
+            } else {
+                break;
+            }
+        }
+
+
+        while(j > 0 && ((int) relation_t_array[j-1]->id_rel[k] > (int) relation_t_array[j]->id_rel[k])){
+            //swap A[j] and A[j-1]
+
+            relation_t* temp;
+            //temp = (relation_t*) malloc(sizeof(relation_t));
+
+            temp = relation_t_array[j];
+
+            relation_t_array[j] = relation_t_array[j-1];
+            relation_t_array[j-1] = temp;
+
+            j--;
+        }
+
+        /*
+        printf("\n----------SWAP-----------");
+        printf("\n\trelation_t_array[0]->id_rel: %s", relation_t_array[0]->id_rel);
+        printf("\n\trelation_t_array[1]->id_rel: %s\n", relation_t_array[1]->id_rel);
+         */
+
+        i++;
+    }
 }
