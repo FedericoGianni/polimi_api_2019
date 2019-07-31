@@ -44,6 +44,15 @@ typedef struct entity {
 
 } entity;
 
+//struct to store the entities who has max inc relations in a list inside every relation type
+typedef struct max_entity {
+
+    entity * ent_ptr;
+
+    struct max_entity *next;
+
+} max_entity;
+
 typedef struct relation{
 
     //pointer to the entity who is giving the relation
@@ -59,15 +68,14 @@ typedef struct relation{
 
 }relation;
 
-
 typedef struct relation_t {
 
     //pointer to a dynamic array which stores the id of the relation type
     char *id_rel;
 
-    //pointer to a dynamic array of pointers to the entities which have the max incoming relationships for this relation type
-    //TODO o faccio un array ma aggiungo la funzione per riordinarlo ad ogni aggiunta, oppure lo cambio in una linked list
-    entity *max_inc_rels[DEF_MAX_REL_L];
+    //pointer to a linked list of pointers to the entities which have the max incoming relationships for this relation type
+    //TODO bisogna fare gli inserimenti in ordine alfabetico cosi resta ordinato per il report
+    max_entity *max_entity_list;
 
     //store the current max number of receiving relations for this type
     int max;
@@ -95,6 +103,7 @@ relation_t *relation_t_array[DEF_REL_T_L];
 char *inputString(FILE *,int);
 
 int hash(char *);
+
 void sort_rel_t_array();
 
 bool addEnt(char *, entity*);
@@ -102,6 +111,7 @@ bool delEnt(char *str, entity *entity_arr);
 bool addRel(char *id_a, char *id_b, char *id_rel);
 bool delRel(char *id_a, char *id_b, char *id_rel);
 void report();
+
 //just for debugging
 void print();
 
@@ -560,8 +570,6 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
             //printf("[DEBUG] ent_b ptr -> %s", ent_b->id_ent);
         }
 
-
-
         if(ptr->next != NULL)
             ptr = ptr->next;
         else
@@ -597,6 +605,11 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         }
     }
 
+    //caso in cui l'array è pieno e devo aum la DEF_REL_T_L -> non trovo la rel e devo aggiungerla ma è pieno
+    if(!found && relation_t_array[i] != NULL) {
+        perror("[DEBUG] ERRORE: ingrandire la dimensione dell'array di tipi di relazione!");
+    }
+
     //printf("\n[DEBUG] se ha trovato la relazione found: %d", found);
 
     //se a questo punto non ha trovato niente found è false, devo creare il tipo di relazione nell'array
@@ -612,13 +625,16 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         strcpy(newRelType->id_rel, id_rel);
         strcat(newRelType->id_rel, "\0");
         newRelType->max = 0;
+        newRelType->max_entity_list = NULL;
 
         relation_t_array[i] = newRelType;
 
+        //TODO sta roba non dovrebbe piu servire -> check
+        /*
         //initialize with default values to avoid errors
         for (int j = 0; j < DEF_MAX_REL_L; ++j) {
-            relation_t_array[i]->max_inc_rels[j] = 0;
-        }
+            relation_t_array[i]->max = 0;
+        }*/
 
         //initialize hash tables all to null
         for (int j = 0; j < DEF_REL_N; ++j) {
@@ -703,19 +719,83 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         //cancellare tutte quelle che c'erano prima perchè è un nuovo max
         //relation_t_array[i]->max_inc_rels[i]->
         //inserirlo (in questo caso non serve ordine alfabetico
-    }
 
-    //aggiorna la lista max per questo tipo di relazione
-    if(ent_b->rel_ent_counters[i] == relation_t_array[i]->max){
-        //ent_b è uguale al max, aggiungilo all'array senza cancellare gli altri -> però in ord alfab
+        //ent_b il nuovo max, cancella tutti quelli precendeti e aggiungi solo questo alla lista dei max
+        max_entity *max_ptr = relation_t_array[i]->max_entity_list;
+
+        //elimina la vecchia lista dei max
+        while(max_ptr != NULL){
+            //TODO elimina la vecchia lista dei max
+            //TODO ELIMINA LA VECHIA LISTA DEI MAX SENÒ CIAO LA MEMORIA POI... just for test
+            max_ptr = max_ptr->next;
+        }
+
+        //inserisci il nuovo max in cima alla lista
+        max_entity *newMaxEnt;
+        newMaxEnt = (max_entity*) malloc(sizeof(max_entity));
+        newMaxEnt->next = NULL;
+        newMaxEnt->ent_ptr = ent_b;
+        relation_t_array[i]->max_entity_list = newMaxEnt;
+
+    } else if(ent_b->rel_ent_counters[i] == relation_t_array[i]->max) {
+        //aggiorna la lista max per questo tipo di relazione
 
         //se non c'era nessun altro max inserisci in prima posizione
-        if(relation_t_array[i]->max_inc_rels[0] == NULL){
-            relation_t_array[i]->max_inc_rels[0] = ent_b;
-        } else {
-            //scorri fino a quando non trovi un posto libero e inseriscilo
-            //TODO va inserito in ordine alfabetico per fare il report giusto
+        if (relation_t_array[i]->max_entity_list == NULL) {
 
+            max_entity *newMaxEnt;
+            newMaxEnt = (max_entity *) malloc(sizeof(max_entity));
+            newMaxEnt->next = NULL;
+            newMaxEnt->ent_ptr = ent_b;
+            relation_t_array[i]->max_entity_list = newMaxEnt;
+
+            //relation_t_array[i]->max_inc_rels[0] = ent_b;
+
+        } else {
+            //ent_b è uguale al max, aggiungilo all'array senza cancellare gli altri -> però in ord alfab
+            //scorri fino a quando non trovi il posto giusto e inseriscilo
+            //TODO va inserito in ordine alfabetico per fare il report giusto
+            //TODO inserisci in ordine alfabetico ent_b nella lista dei max
+            //printf("\n\nINSERISCI IN ORDINE ALFABETICO DAI CAZOZ!!");
+            //printf("\n[DEBUG] devo inserire in ordine alfabetico: %s", ent_b->id_ent);
+
+            max_entity *max_ptr = relation_t_array[i]->max_entity_list;
+            max_entity *max_ptr_pre = NULL;
+            int k = 0;
+
+            while (max_ptr->next != NULL && ((int) max_ptr->ent_ptr->id_ent[k] <= (int) ent_b->id_ent[k])) {
+                //printf("\n[DEBUG] contronto %s con %s", max_ptr->ent_ptr->id_ent, ent_b->id_ent);
+
+                k++;
+                //printf("\n\nk: %d", k);
+                //TODO confrontare solo il carattere k-esimo senza riconfrontare ogni volta tutta la sottostringa
+                //TODO controlalre se va fatto > o <
+                /*
+                if(max_ptr_pre != NULL)
+                    printf("max_ptr_pre -> %s", max_ptr_pre->ent_ptr->id_ent);
+                else
+                    printf("max_ptr_pre -> NULL");
+                printf("max_ptr -> %s", max_ptr->ent_ptr->id_ent);*/
+
+                max_ptr_pre = max_ptr;
+                max_ptr = max_ptr->next;
+            }
+
+            //adesso max_ptr punta al primo > e max_ptr_pre punta al primo minore
+            //max_ptr_pre->next = quello da aggiungere
+            //quello da aggiungere -> next = max_ptr
+
+            max_entity *newMaxEnt;
+            newMaxEnt = (max_entity *) malloc(sizeof(max_entity));
+            if(max_ptr_pre != NULL)
+                max_ptr_pre->next = newMaxEnt;
+            else
+                relation_t_array[i]->max_entity_list = newMaxEnt;
+            newMaxEnt->next = max_ptr;
+            newMaxEnt->ent_ptr = ent_b;
+
+            //TODO questo caso noon dovrebbe servire -> impossibile che sia gia nel max -> da verificare
+            /*
             int j = 0;
             bool alreadyInMax = false;
             while(relation_t_array[i]->max_inc_rels[j] != NULL){
@@ -725,19 +805,8 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
                 }
                 j++;
             }
-            //TODO attenzione che potrei sforare l'array visto che è statico
+        }*/
 
-            if(!alreadyInMax) {
-                relation_t_array[i]->max_inc_rels[j] = ent_b;
-            }
-        }
-
-    } else if(ent_b->rel_ent_counters[i] > relation_t_array[i]->max){
-        //ent_b il nuovo max, cancella tutti quelli precendeti e aggiungi solo questo alla lista dei max
-        relation_t_array[i]->max_inc_rels[0] = ent_b;
-
-        for (int j = 1; j < DEF_MAX_REL_L; ++j) {
-            relation_t_array[i]->max_inc_rels[j] = NULL;
         }
     }
 
@@ -776,9 +845,10 @@ void report() {
 
             printf("\"%s\" ", relation_t_array[i]->id_rel);
             int j = 0;
-            while(relation_t_array[i]->max_inc_rels[j] != NULL){
-                printf("\"%s\" ", relation_t_array[i]->max_inc_rels[j]->id_ent);
-                j++;
+            max_entity *ptr = relation_t_array[i]->max_entity_list;
+            while(ptr != NULL){
+                printf("\"%s\" ", ptr->ent_ptr->id_ent);
+                ptr = ptr->next;
             }
             printf("%d;", relation_t_array[i]->max);
         }
@@ -832,7 +902,7 @@ void print(){
                    "", tmp->id_ent);
         }
     }*/
-
+    /*
     for (int l = 0; l < DEF_REL_T_L; ++l) {
 
         if(relation_t_array[l] != NULL) {
@@ -863,6 +933,17 @@ void print(){
 
             }
         }
+    }*/
+
+    for (int l = 0; l < DEF_REL_T_L; ++l) {
+        if(relation_t_array[l] != NULL) {
+            max_entity *ptr = relation_t_array[l]->max_entity_list;
+            printf("\n[DEBUG] scorro la lista entità max per il tipo di rel: %d: %s", l, relation_t_array[l]->id_rel);
+            while (ptr != NULL) {
+                printf("\nptr -> %s", ptr->ent_ptr->id_ent);
+                ptr = ptr->next;
+            }
+        }
     }
 }
 
@@ -871,7 +952,7 @@ void sort_rel_t_array(){
     //insertion sort -> could be improved but it wont impact that much because there are just a few rel_types
     //if need little time improvement could improve this function
 
-    //printf("\n[DEBUG] chiamato sort relation type array!");
+    //printf("\n------------------------[DEBUG] chiamato sort relation type array!--------------------------");
 
     int i = 1;
     while (i < DEF_REL_T_L){
@@ -881,11 +962,12 @@ void sort_rel_t_array(){
         if(relation_t_array[j] == NULL || relation_t_array[j-1] == NULL){
             return;
         }
+
         /*
         printf("\n--------------INITIAL--------------");
         printf("\n\trelation_t_array[0]->id_rel: %s", relation_t_array[0]->id_rel);
         printf("\n\trelation_t_array[1]->id_rel: %s\n", relation_t_array[1]->id_rel);
-         */
+        */
 
 
         //k è l'indice della prima lettera diversa per le 2 relazioni che sto confrontando
@@ -923,3 +1005,5 @@ void sort_rel_t_array(){
         i++;
     }
 }
+
+
