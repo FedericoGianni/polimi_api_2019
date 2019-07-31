@@ -66,6 +66,7 @@ typedef struct relation_t {
     char *id_rel;
 
     //pointer to a dynamic array of pointers to the entities which have the max incoming relationships for this relation type
+    //TODO o faccio un array ma aggiungo la funzione per riordinarlo ad ogni aggiunta, oppure lo cambio in una linked list
     entity *max_inc_rels[DEF_MAX_REL_L];
 
     //store the current max number of receiving relations for this type
@@ -215,7 +216,6 @@ void main() {
             //printf("id_b: %s ", id_b);
             //printf("id_rel: %s ", id_rel);
 
-            //TODO addRel(id_rel, id_a, id_b);
             addRel(id_a, id_b, id_rel);
 
 
@@ -291,7 +291,7 @@ void main() {
 
         } else if(strncmp(input, REPORT, 6) == 0){
             //printf("[DEBUG] read repo\n");
-            print();
+            //print();
             report();
 
         } else if(strncmp(input, END, 3) == 0){
@@ -627,7 +627,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         }
 
         //sort the relation_type array in alphabetical order
-        sort_rel_t_array();
+        //sort_rel_t_array();
     }
 
     //2 aggiungo la singola relazione alle due hash table di singole relazioni divise per tipo
@@ -697,18 +697,24 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
     relation_t_array[i]->index = i;
     //aggiorna il max del tipo di relazione se necessario
     if(ent_b->rel_ent_counters[i] > relation_t_array[i]->max){
+        //TODO aggiungerlo in ordine alfabetico
+        //TODO in questo caso devo 1 cancellare quelli che c'erano prima 2 inserirlo (quindi non serve ordine alfab)
         relation_t_array[i]->max = ent_b->rel_ent_counters[i];
+        //cancellare tutte quelle che c'erano prima perchè è un nuovo max
+        //relation_t_array[i]->max_inc_rels[i]->
+        //inserirlo (in questo caso non serve ordine alfabetico
     }
 
     //aggiorna la lista max per questo tipo di relazione
     if(ent_b->rel_ent_counters[i] == relation_t_array[i]->max){
-        //ent_b è uguale al max, aggiungilo all'array senza cancellare gli altri
+        //ent_b è uguale al max, aggiungilo all'array senza cancellare gli altri -> però in ord alfab
 
         //se non c'era nessun altro max inserisci in prima posizione
         if(relation_t_array[i]->max_inc_rels[0] == NULL){
             relation_t_array[i]->max_inc_rels[0] = ent_b;
         } else {
             //scorri fino a quando non trovi un posto libero e inseriscilo
+            //TODO va inserito in ordine alfabetico per fare il report giusto
 
             int j = 0;
             bool alreadyInMax = false;
