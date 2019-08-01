@@ -12,7 +12,7 @@
 
 //initial input line length
 #define DEF_INPUT_L 100
-#define DEF_SHORT_NAME_L 90
+#define DEF_SHORT_NAME_L 50
 //input length increment
 #define DEF_INPUT_L_INC 16
 
@@ -36,6 +36,8 @@ typedef struct entity {
 
     //pointer to a dynamic array which stores the id of the entity
     char *id_ent;
+
+    char id_ent_n[DEF_SHORT_NAME_L];
 
     //counters to keep track of the receiving relation for each entity
     int rel_ent_counters[DEF_REL_T_L];
@@ -179,7 +181,8 @@ void main() {
             //printf("\nadesso ch punta alle virgolette -> %c", *ch);
 
             //+1 to include \0
-            char *id_a = (char *) malloc(i* sizeof(char) + 1);
+            //char *id_a = (char *) malloc(i* sizeof(char) + 1);
+            char id_a[DEF_SHORT_NAME_L];
             strncpy(id_a, &input[8], i+1);
             id_a[i] = '\0';
             //printf("\nid_a: %s", id_a);
@@ -201,7 +204,8 @@ void main() {
             //printf("\nadesso ch punta alle virgolette del 2 nome -> %c", *ch);
 
             //+1 to include \0
-            char *id_b = (char *) malloc((i* sizeof(char)) + 1);
+            //char *id_b = (char *) malloc((i* sizeof(char)) + 1);
+            char id_b[DEF_SHORT_NAME_L];
             strncpy(id_b, &input[curr_pos], i);
             id_b[i] = '\0';
             //printf("\nid_b: %s", id_b);
@@ -222,7 +226,8 @@ void main() {
 
 
             //+1 to include \0
-            char *id_rel = (char *) malloc((i* sizeof(char)) + 1);
+            //char *id_rel = (char *) malloc((i* sizeof(char)) + 1);
+            char id_rel[DEF_SHORT_NAME_L];
             strncpy(id_rel, &input[curr_pos], i);
             id_rel[i] = '\0';
 
@@ -381,7 +386,10 @@ bool addEnt(char *str, entity *e) {
         entity * newEnt;
         newEnt = (entity *) malloc(sizeof(entity));
 
-        newEnt->id_ent = (char*) malloc(sizeof(char)*(strlen(str)+1));
+
+        //TODO meglio malloc (meno spazio) o array statico?
+        //newEnt->id_ent = (char*) malloc(sizeof(char)*(strlen(str)+1));
+        newEnt->id_ent = newEnt->id_ent_n;
         strcpy(newEnt->id_ent, str);
         strcat(newEnt->id_ent, "\0");
         newEnt->next = NULL;
@@ -417,7 +425,9 @@ bool addEnt(char *str, entity *e) {
         entity * newEnt;
         newEnt = (entity *) malloc(sizeof(entity));
 
-        newEnt->id_ent = (char*) malloc(sizeof(char)*(strlen(str)+1));
+        //TODO meglio malloc (meno spazio) o array statico?
+        //newEnt->id_ent = (char*) malloc(sizeof(char)*(strlen(str)+1));
+        newEnt->id_ent = newEnt->id_ent_n;
         strcpy(newEnt->id_ent, str);
         strcat(newEnt->id_ent, "\0");
 
@@ -436,7 +446,7 @@ bool addEnt(char *str, entity *e) {
 
 
 }
-
+/*
 //hash function that generates an array index based on a calc on the entity name
 int hash(char *str){
 
@@ -449,6 +459,18 @@ int hash(char *str){
     }
 
     return (sum + 3) % DEF_ENT_N;
+}*/
+
+//TODO testare efficenza di questa hash
+int hash(char *str) {
+
+    unsigned long hash = 5381;
+    int c;
+
+    while (c = *str++)
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+
+    return hash % DEF_ENT_N;
 }
 
 
@@ -978,30 +1000,38 @@ void report() {
     relation_t *rel_t_ptr = relation_t_head;
 
     if(relation_t_head == NULL){
-        printf("none");
+        fputs("none", stdout);
     }
 
     while(rel_t_ptr != NULL){
         if(i != 0){
-            printf(" ");
+            fputs(" ", stdout);
+            //printf(" ");
         }
 
-        printf("\"%s\" ", rel_t_ptr->id_rel);
+        //printf("\"%s\" ", rel_t_ptr->id_rel);
+        fputs("\"", stdout);
+        fputs(rel_t_ptr->id_rel, stdout);
+        fputs("\" ", stdout);
 
         max_entity *ptr = rel_t_ptr->max_entity_list;
         while(ptr != NULL){
-            printf("\"%s\" ", ptr->ent_ptr->id_ent);
+            //printf("\"%s\" ", ptr->ent_ptr->id_ent);
+            fputs("\"", stdout);
+            fputs(ptr->ent_ptr->id_ent, stdout);
+            fputs("\" ", stdout);
             ptr = ptr->next;
         }
 
         printf("%d;", rel_t_ptr->max);
-
+        //putc_unlocked(rel_t_ptr->max, stdout);
+        //fputs(rel_t_ptr->max, stdout);
         rel_t_ptr = rel_t_ptr->next;
         i++;
 
     }
 
-    printf("\n");
+    fputs("\n", stdout);
 
 
     /*
