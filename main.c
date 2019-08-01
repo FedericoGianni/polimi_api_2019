@@ -24,7 +24,7 @@
 //initial relations type array length
 #define DEF_REL_T_L 12
 //relation hash table length
-#define DEF_REL_N 1024
+#define DEF_REL_N 100000
 
 //size for the array of entities who has max inc rel
 #define DEF_MAX_REL_L 12
@@ -138,7 +138,7 @@ void main() {
     while(!end){
 
         //read input from stdin, line by line allocating a dynamic array for each line
-        getline(&input_b, buff_size_ptr, stdin);
+        int r = getline(&input_b, buff_size_ptr, stdin);
         //input = inputString(stdin, DEF_INPUT_L);
 
         //printf("\n[DEBUG] Letta la stringa: %s", input);
@@ -316,12 +316,6 @@ void main() {
             perror("[DEBUG] invalid command read!");
             break;
         }
-
-        //de-allocate heap memory used to store string input, since in the next execution the pointer will point to
-        //the new string and it will be impossible to eliminate old string from heap
-
-        //free(input);
-
     }
 }
 
@@ -519,6 +513,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
 
     // 1.1 verifica che esistano entrambe le entità -> datore e ricevente (se non esiste uno dei 2 fermati)
     // 1.2 verifica che id_rel esista già o meno -> se non esiste creala
+    // 1.3 verifica che la relazioen non esista già -> se esiste gia non fare nulla
     // 2 aggiungi la relazione alla lista di relazioni di quel tipo
     // 3 aggiorna contatori entità e lista max
 
@@ -529,6 +524,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
     entity* ent_b;
     int ind = hash(id_a);
 
+    //printf("\naddrel(%s, %s, %s)", id_a, id_b, id_rel);
     //printf("\n\nindex restituito da hash(%s): %d", id_a, ind);
 
     entity* ptr = entity_hash[ind];
@@ -540,11 +536,11 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         //printf("verifico che l'entità: %s corrisponda all'entità: %s", id_a, ptr->id_ent);
         if(strcmp(id_a, ptr->id_ent)==0){
            entity_a_found = true;
-           //printf("[DEBUG] entità A trovata!");
+           //printf("\n[DEBUG] entità A trovata!");
 
             //save a pointer to ent_A for future use
             ent_a = ptr;
-            //printf("[DEBUG] ent_a ptr -> %s", ent_a->id_ent);
+            //printf("\n[DEBUG] ent_a ptr -> %s", ent_a->id_ent);
             break;
 
         }
@@ -602,12 +598,13 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
 
         if(strcmp(rel_t_p->id_rel, id_rel) == 0){
             i = rel_t_p->index;
+            //printf("\nIndice della relazione %s : %d", rel_t_p->id_rel, rel_t_p->index);
             found = true;
             break;
         }
         i++;
 
-        if(rel_t_p->next != NULL)
+        if(!found && rel_t_p->next != NULL)
             rel_t_p = rel_t_p->next;
         else
             break;
@@ -618,24 +615,56 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
 
     //se a questo punto non ha trovato niente found è false, devo creare il tipo di relazione nell'array
     //altrimenti procedi
+    /*
+    printf("\nhash(R_Jander_Panell)=%d", hash("R_Jander_Panell"));
+    printf("\nscorro sto cazzo di hash per veder cosa trovo dentro:");
+    relation *p = rel_t_p->relation_receiver_hash[hash("R_Jander_Panell")];
 
-    //TODO verifica che la relazione non esista già-> in quel caso non fare nulla
+    while(p != NULL){
+        printf("\n[] -> %s -> %s", p->sender->id_ent, p->receiving->id_ent);
+        p = p->next_b;
+    }*/
+
+
+    // 1.3 verifica che la relazione non esista già-> in quel caso non fare nulla
     if(found) {
-        //printf("\n\nCERCO SE MAGARI LA REL ESISTE GIA");
+        //printf("\n[DEBUG] Verifico che la relazione non esista già");
         bool alreadyRel = false;
-        relation *rel_p = rel_t_p->relation_receiver_hash[hash(ent_b->id_ent)];
+        int h = hash(ent_b->id_ent);
+        //printf("\nhash(ent->a)=%d", h);
+        //printf("\nhash(R_Jander_Panell)=%d", hash("R_Jander_Panell"));
+        relation *rel_p = rel_t_p->relation_receiver_hash[h];
 
-        while (rel_p != NULL) {
-            if (strcmp(rel_p->sender->id_ent, ent_a->id_ent) == 0 &&
-                strcmp(rel_p->receiving->id_ent, ent_b->id_ent) == 0) {
+        while (!alreadyRel && rel_p != NULL) {
+            //printf("\nverifico se esiste una corrispondenza per la rel ent_a: %s, ent_b: %s", ent_a->id_ent, ent_b->id_ent);
+            /*
+            if(strcmp(ent_a->id_ent, "R_Jander_Panell") == 0 && strcmp(ent_b->id_ent, "Kelden_Amadiro") == 0){
+                printf("\n___________________________________________________AAAAAAAAAAAAAA");
                 alreadyRel = true;
-                break;
-            }
+                //printf("\n\n---------------------------------------------qui c'è il problema");
+                //printf("\nconfronto:\nrel->p->sender: %s con ent_a: %s", rel_p->sender->id_ent, ent_a->id_ent);
+                //printf("\nconfronto:\nrel->p->receiving: %s con ent_b: %s", rel_p->receiving->id_ent, ent_b->id_ent);
+                if (strcmp(rel_p->sender->id_ent, ent_a->id_ent) == 0 && strcmp(rel_p->receiving->id_ent, ent_b->id_ent) == 0) {
+                    alreadyRel = true;
+                    //printf("\n\n-------------------pre funzionare dovrebbe stamapre questo!");
+                    break;
+                } else {
+                    //printf("\nnon corrispondono quindi non c'è già questa relazione!");
+                }*/
 
-            if (rel_p->next_a != NULL)
-                rel_p = rel_p->next_a;
-            else
+            //}
+
+            if (strcmp(rel_p->sender->id_ent, ent_a->id_ent) == 0 && strcmp(rel_p->receiving->id_ent, ent_b->id_ent) == 0) {
+                alreadyRel = true;
+                //printf("\n\n-------------------e l'ho pure già trovata! bène!");
                 break;
+
+            } else {
+                if (rel_p->next_b != NULL)
+                    rel_p = rel_p->next_b;
+                else
+                    break;
+            }
         }
 
         if (alreadyRel) {
@@ -656,6 +685,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         newRelType->max = 0;
         newRelType->max_entity_list = NULL;
         newRelType->next = NULL;
+        //printf("\nassegno alla nuova relazione: %s l'indice %d", newRelType->id_rel, i);
         newRelType->index = i;
 
         if(relation_t_head == NULL)
@@ -678,6 +708,8 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
                 newRelType->next = rel_p;
                 rel_p_prev->next = newRelType;
                 rel_p->next = NULL;
+                rel_p->index = i;
+                newRelType->index = i;
                 //rel_p->next = newRelType;
             } else {
                 //caso in cui c'è solo 1
@@ -685,11 +717,13 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
                 if(strcmp(rel_p->id_rel, ent_b->id_ent) < 0){
                     newRelType->next = NULL;
                     rel_p->next = newRelType;
+                    newRelType->index = i;
 
                 } else if(strcmp(rel_p->id_rel, ent_b->id_ent) > 0){
                     newRelType->next = rel_p;
                     rel_p->next = NULL;
                     relation_t_head = newRelType;
+                    newRelType->index = i;
 
                 }
 
@@ -705,11 +739,13 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
             relation_t_array[i]->max = 0;
         }*/
 
+        //TODO collo di bottiglia?
+        /*
         //initialize hash tables all to null
         for (int j = 0; j < DEF_REL_N; ++j) {
             newRelType->relation_sender_hash[j] = NULL;
             newRelType->relation_receiver_hash[j] = NULL;
-        }
+        }*/
 
         //sort the relation_type array in alphabetical order
         //sort_rel_t_array();
@@ -728,25 +764,21 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
     int index_a = hash(id_a);
     //printf("[DEBUG] indice dell'hash table calcolato su questo nome: %d\n", index_a);
 
-    if(rel_t_p->relation_receiver_hash[index_a] == NULL){
+    if(rel_t_p->relation_sender_hash[index_a] == NULL){
         //if the linked list in this hash index is empty, the entity is not present for sure
         //printf("entro nell'indice dell'hash table %d che ho trovato vuoto.", index_a);
 
-        rel_t_p->relation_receiver_hash[index_a] = newSingleRel;
+        rel_t_p->relation_sender_hash[index_a] = newSingleRel;
 
         //printf("[DEBUG] aggiunta relazione: %s nell'indice %d che era vuoto (no collisioni). ", id_rel, index_a);
 
     } else {
-        //printf("----------------------------------------------------------entro nell'else!");
+        // printf("----------------------------------------------------------entro nell'else!");
 
-        relation *ptr_a = rel_t_p->relation_receiver_hash[index_a];
-
-        while (ptr_a->next_a != NULL) {
-            ptr_a = ptr_a->next_a;
-        }
-
-        ptr_a->next_a = newSingleRel;
-        newSingleRel->next_a = NULL;
+        //inserisci in testa
+        relation **ptr_a = &rel_t_p->relation_sender_hash[index_a];
+        newSingleRel->next_a = *ptr_a;
+        *ptr_a = newSingleRel;
     }
     //printf("-----------------------esco dall'else");
 
@@ -754,7 +786,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
     int index_b = hash(id_b);
     //printf("[DEBUG] indice dell'hash table calcolato su questo nome: %d\n", index_b);
 
-    if(rel_t_p->relation_sender_hash[index_b] == NULL){
+    if(rel_t_p->relation_receiver_hash[index_b] == NULL){
         //printf("entro nell'if");
         //if the linked list in this hash index is empty, the entity is not present for sure
         //printf("entro nell'indice dell'hash table %d che ho trovato vuoto.", index_b);
@@ -764,16 +796,12 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         //printf("[DEBUG] aggiunta relazione: %s nell'indice %d che era vuoto (no collisioni). ", id_rel, index_b);
 
     } else {
-        //printf("\n\nentro nell'else!");
 
-        relation *ptr_b = rel_t_p->relation_receiver_hash[index_b];
+        //inserisci in testa
+        relation **ptr_b = &rel_t_p->relation_receiver_hash[index_b];
+        newSingleRel->next_b = *ptr_b;
+        *ptr_b = newSingleRel;
 
-        while (ptr_b->next_b != NULL) {
-            ptr_b = ptr_b->next_b;
-        }
-
-        ptr_b->next_b = newSingleRel;
-        //newSingleRel->next_b = NULL;
     }
 
     //aggiorna i contatori delle entità -> ricevente ce l'ho anche già il puntatore, basta aumentare contatore giusto
@@ -804,6 +832,10 @@ bool addRel(char *id_a, char *id_b, char *id_rel){
         newMaxEnt = (max_entity*) malloc(sizeof(max_entity));
         newMaxEnt->next = NULL;
         newMaxEnt->ent_ptr = ent_b;
+
+        //TODO cosa messa a caso alle 23.30 ->ripensarci
+        newMaxEnt->ent_ptr->rel_ent_counters[i] = rel_t_p->max;
+
         rel_t_p->max_entity_list = newMaxEnt;
 
     } else if(ent_b->rel_ent_counters[i] == rel_t_p->max) {
@@ -1034,17 +1066,18 @@ void print(){
                    "", tmp->id_ent);
         }
     }*/
-    /*
-    for (int l = 0; l < DEF_REL_T_L; ++l) {
 
-        if(relation_t_array[l] != NULL) {
-            printf("\n[DEBUG] stato delle hash table del tipo di rel: %d: %s", l, relation_t_array[l]->id_rel);
-            for (int k = 0; k < DEF_REL_N; ++k) {
+    printf("\n[DEBUG] Stato attuale delle liste di relazioni: \n");
+    relation_t *rel_t_p = relation_t_head;
+    while(rel_t_p != NULL){
+        for (int k = 0; k < DEF_REL_N; ++k) {
+            if(k == 32) {
                 //scorri k-esima posizione della hash table
-                if (relation_t_array[l]->relation_sender_hash[k] != NULL) {
 
-                    relation* ptr = relation_t_array[l]->relation_receiver_hash[k];
-                    while(ptr != NULL){
+                if (rel_t_p->relation_sender_hash[k] != NULL) {
+
+                    relation *ptr = rel_t_p->relation_sender_hash[k];
+                    while (ptr != NULL) {
                         printf("\nhash_table_sender[%d]: ", k);
                         printf("\nid_datore: %s", ptr->sender->id_ent);
                         printf("\nid_ricevente: %s", ptr->receiving->id_ent);
@@ -1052,9 +1085,9 @@ void print(){
                     }
                 }
 
-                if (relation_t_array[l]->relation_receiver_hash[k] != NULL) {
+                if (rel_t_p->relation_receiver_hash[k] != NULL) {
 
-                    relation *ptr = relation_t_array[l]->relation_receiver_hash[k];
+                    relation *ptr = rel_t_p->relation_receiver_hash[k];
                     while (ptr != NULL) {
                         printf("\nhash_table_receiver[%d]: ", k);
                         printf("\nid_datore: %s", ptr->sender->id_ent);
@@ -1065,7 +1098,11 @@ void print(){
 
             }
         }
-    }*/
+
+        rel_t_p = rel_t_p->next;
+
+    }
+
     /*
     for (int l = 0; l < DEF_REL_T_L; ++l) {
         if(relation_t_array[l] != NULL) {
