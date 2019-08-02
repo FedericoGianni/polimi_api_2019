@@ -29,6 +29,8 @@
 //size for the array of entities who has max inc rel
 #define DEF_MAX_REL_L 12
 
+#define DEF_DEL_REL_T_IND_L 50
+
 
 //GLOBAL DATA STRUCTURES
 
@@ -107,6 +109,9 @@ entity *entity_hash [DEF_ENT_N];
 //TODO sfruttare inserimento in ordine alfabetico che c'è già per la lista di max ent!
 relation_t *relation_t_head;
 
+//array to store index of the deleted relations to reuse them
+int deleted_rel_type_indexes[DEF_DEL_REL_T_IND_L] = {0};
+
 //FUNCTIONS DEFINITION
 char *inputString(FILE *,int);
 
@@ -161,10 +166,12 @@ void main() {
 
         } else if(strncmp(input, DELENT, 6) == 0){
             //TODO remove this entity also from every relation
-            //printf("[DEBUG] read deleent\n");
+            //printf("\n[DEBUG] read deleent\n");
             //short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
-            strncpy(short_name, input + 7 * sizeof(char), strlen(input) - 7);
+            strncpy(short_name, &input[8], strlen(input) - 10);
+            short_name[strlen(input)-10] = '\0';
             //printf("\n[DEBUG] Short_name: %s", short_name);
+            //printf("\n delete: %s", short_name);
             delEnt(short_name, entity_hash[0]);
 
 
@@ -305,10 +312,10 @@ void main() {
             strncpy(id_rel, &input[curr_pos], i);
             id_rel[i] = '\0';
 
-            printf("\n[DEBUG] delRel: ");
-            printf("\nid_a: %s ", id_a);
-            printf("id_b: %s ", id_b);
-            printf("id_rel: %s ", id_rel);
+            //printf("\n[DEBUG] delRel: ");
+            //printf("\nid_a: %s ", id_a);
+            //printf("id_b: %s ", id_b);
+            //printf("id_rel: %s ", id_rel);
 
             delRel(id_a, id_b, id_rel);
 
@@ -490,15 +497,15 @@ bool delEnt(char *str, entity *e){
     //printf("\ndelent: elimina %s -> index: %d", str, index);
 
     entity *ptr = entity_hash[index];
-    entity *prv = entity_hash[index];
-
+    entity *prv = NULL;
     do{
         if(strcmp(str, ptr->id_ent)==0){
             //found entity to remove
-            //printf("\n[DEBUG] entità da rimuovere trovata!");
+            printf("\n[DEBUG] entità da rimuovere trovata!");
             //TODO scorri tutte le relazioni cercando quelle in cui l'utente è il datore o ricevente e eliminale
             //TODO aggiorna i contatori e la lista dei max
             //TODO rimuovi l'entita dalla hash table delle entità
+
 
             //3 casi
             //A) l'entità da eliminare è il primo della lista
@@ -506,21 +513,19 @@ bool delEnt(char *str, entity *e){
             //c) l'entità da eliminare è in fondo alla lista
 
 
-            if(ptr->id_ent == entity_hash[index]->id_ent){
-                //printf("entità da eliminare a cui sto puntando: %s", ptr->id_ent);
-                if(ptr-> next != NULL) {
+            if(strcmp(ptr->id_ent, entity_hash[index]->id_ent) == 0){
+                printf("\nentità da eliminare a cui sto puntando: %s", ptr->id_ent);
+                if(ptr-> next == NULL && prv == NULL) {
+                    entity_hash[index] = NULL;
+                    free(ptr);
+                } else if(prv == NULL && ptr->next != NULL){
                     entity_hash[index] = ptr->next;
                     free(ptr);
+                } else if(ptr->next != NULL && prv != NULL){
+                    prv->next = ptr->next;
+                    free(ptr);
                 }
-                //else
-                    //entity_hash[index] = NULL;
-                //free(ptr);
-            } else{
-                prv->next = ptr->next;
-                free(ptr);
             }
-
-            return true;
 
         } else {
             prv = ptr;
@@ -711,7 +716,17 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
         newRelType->max_entity_list = NULL;
         newRelType->next = NULL;
         //printf("\nassegno alla nuova relazione: %s l'indice %d", newRelType->id_rel, i);
-        newRelType->index = i;
+        //TODO non va bene se rimuovo un tipo di relazione prima perchè poi mi assegna lo stesso index per
+        //TODO 2 tipi diversi di relazione
+        for (int k = 0; k < DEF_DEL_REL_T_IND_L; ++k) {
+            if(deleted_rel_type_indexes[k] != 0){
+                newRelType->index = k;
+                break;
+            } else {
+                newRelType->index = i;
+                break;
+            }
+        }
 
         if (relation_t_head == NULL)
             relation_t_head = newRelType;
@@ -764,7 +779,6 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
             relation_t_array[i]->max = 0;
         }*/
 
-        //TODO vedere se serve o no -> sembrea di si
         //initialize hash tables all to null
         for (int j = 0; j < DEF_REL_N; ++j) {
             newRelType->relation_sender_hash[j] = NULL;
@@ -846,7 +860,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
         max_entity* max_ptr = rel_t_p->max_entity_list;
         max_entity* temp;
 
-        //TODO cercare di capire se è giusto o no sto controllo
+        //TODO cercare di capire se è giusto o no sto controllo -> non ci sono leak quindi sembra di si
         if(max_ptr != NULL){
             //elimina la vecchia lista dei max
             while (max_ptr != NULL) {
@@ -863,7 +877,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
         newMaxEnt->next = NULL;
         newMaxEnt->ent_ptr = ent_b;
 
-        //TODO cosa messa a caso alle 23.30 ->ripensarci
+        //TODO cosa messa a caso alle 23.30 ->ripensarci -> sembra andare
         newMaxEnt->ent_ptr->rel_ent_counters[i] = rel_t_p->max;
 
         rel_t_p->max_entity_list = newMaxEnt;
@@ -888,7 +902,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
 
             max_entity *max_ptr = rel_t_p->max_entity_list;
             max_entity *max_ptr_pre = NULL;
-            int k = 0;
+            //int k = 0;
 
             while (max_ptr != NULL) {
 
@@ -899,7 +913,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
                 }
 
                 /*
-                //TODO cercare di capire se serve o no sto calcolo del k
+                //TODO cercare di capire se serve o no sto calcolo del k -> non credo (lascio per sicurezza)
                 k = 0;
                 //printf("\n[DEBUG] contronto %s con %s", max_ptr->ent_ptr->id_ent, ent_b->id_ent);
                 //TODO Fixare perchè causa errori valgrind
@@ -996,6 +1010,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
         //printf("\n[DEBUG] chiamato delrel di %s %s %s", id_a, id_b, id_rel);
 
         relation_t *rel_t_p;
+        relation_t *rel_t_p_pre = NULL;
 
         //se non esistono relazioni sicuramente non esiste la relazione cercata
         if (relation_t_head == NULL) {
@@ -1016,9 +1031,10 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
                 break;
             } else {
 
-                if (rel_t_p->next != NULL)
+                if (rel_t_p->next != NULL) {
+                    rel_t_p_pre = rel_t_p;
                     rel_t_p = rel_t_p->next;
-                else
+                } else
                     break;
             }
 
@@ -1136,14 +1152,141 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
         ent_b->rel_ent_counters[rel_t_p->index]--;
         //printf("\n[DEBUG] contatore di %s della rel %s dopo: %d", ent_b->id_ent, rel_t_p->id_rel, ent_b->rel_ent_counters[rel_t_p->index]);
 
+        bool remRelType = false;
         //se la relazione da rimuovere contribuiva a rendere ent_b uno dei max riceventi
         //printf("\n[DEBUG] if(cont_ent_b == rel_t_p->max) -> if(%d == %d)", prev_ent_b_cont, rel_t_p->max);
         if (prev_ent_b_cont == rel_t_p->max) {
             //TODO ent_b era nella lista dei max
             //TODO 2 casi -> A se è da solo son cazzi e va ricalcolata la lista dei max
-            if (rel_t_p->max_entity_list->next == NULL) {
 
-                //printf("\n[DEBUG] Ricalcola la lista delle entità max!");
+            if (rel_t_p->max_entity_list->next == NULL) {
+                //printf("\n[DEBUG] Ricalcola la lista delle entità max");
+                //TODO ricalcola la lista dei max, elimina quella vecchia
+                //TODO in questo caso se l'entità era l'unica per qeusta relazione -> devo anche cancellare la relazione
+
+                //SE trovi ancora dei nuovi max -> elimina vecchia lista dei max, fai quella nuova
+                //SE non trovi dei nuovi max -> elimina completamente anche il tipo di relazione
+
+                //1.0 cancella la vecchia lista dei max -> va freeate in ogni caso
+                //TODO cancella la vecchia lista dei max free -> va fatto in ogni caso anche se devo cancellare tipo rel
+
+                max_entity *max_ptr = rel_t_p->max_entity_list;
+                max_entity *tmp = NULL;
+                while(max_ptr != NULL){
+                    tmp = max_ptr;
+
+                    if(tmp != rel_t_p->max_entity_list) {
+                        free(tmp);
+                    }
+                    if(max_ptr->next != NULL)
+                        max_ptr = max_ptr->next;
+                    else
+                        break;
+                }
+
+                //1.1 scorro tutti i riceventi della relazione rel_t_p (rel_t_p->relation_receiver_hash)
+                //1.2 aggiungi tutte le entità con max == nuovo max alla nuova lista (quando trovi la prima setta a true bool)
+                bool newMaxFound = false;
+                relation *rel_p = NULL;
+                //TODO non so quale sia il newmax
+                int newMax = 0;
+
+                for (int k = 0; k < DEF_REL_N; ++k) {
+                    if(rel_t_p->relation_receiver_hash[k] != NULL){
+                        rel_p = rel_t_p->relation_receiver_hash[k];
+                    }
+
+                    while(rel_p != NULL){
+
+                        if(rel_p->receiving->rel_ent_counters[rel_t_p->index] > newMax){
+                            newMax = rel_p->receiving->rel_ent_counters[rel_t_p->index];
+                        }
+
+                        if (rel_p->next_b != NULL)
+                            rel_p->next_b = rel_p;
+                        else
+                            break;
+                    }
+                }
+
+                //printf("\nnewmax: %d", newMax);
+
+                if(newMax == 0){
+                    newMaxFound = false;
+                } else {
+                    rel_t_p->max = newMax;
+                    for (int k = 0; k < DEF_REL_N; ++k) {
+                        if (rel_t_p->relation_receiver_hash[k] != NULL) {
+                            rel_p = rel_t_p->relation_receiver_hash[k];
+                        }
+
+                        while (rel_p != NULL) {
+
+                            if (rel_p->receiving->rel_ent_counters[rel_t_p->index] == newMax) {
+                                newMaxFound = true;
+                                //inserisci in ordine alfabetico alla lista dei max
+
+                                max_entity *max_ptr = rel_t_p->max_entity_list;
+                                max_entity *max_ptr_pre = NULL;
+
+                                while (max_ptr != NULL) {
+
+                                    if (strcmp(max_ptr->ent_ptr->id_ent, ent_b->id_ent) < 0) {
+                                        //printf("\n------------------------------------continua a proseguire!!");
+                                    } else {
+                                        break;
+                                    }
+
+
+                                    max_ptr_pre = max_ptr;
+                                    max_ptr = max_ptr->next;
+
+
+                                }
+
+                                //adesso max_ptr punta al primo > e max_ptr_pre punta al primo minore
+                                //max_ptr_pre->next = quello da aggiungere
+                                //quello da aggiungere -> next = max_ptr
+
+                                max_entity *newMaxEnt;
+                                newMaxEnt = (max_entity *) malloc(sizeof(max_entity));
+
+                                /*
+                                if (k == 0) {
+                                    //inserisci prima
+                                    rel_t_p->max_entity_list = newMaxEnt;
+                                    newMaxEnt->next = max_ptr;
+                                    newMaxEnt->ent_ptr = ent_b;
+
+                                } else {*/
+                                //inserisci dopo
+                                //TODO vedere se sto if else ha senso o no
+                                if (max_ptr_pre != NULL)
+                                    max_ptr_pre->next = newMaxEnt;
+                                else
+                                    rel_t_p->max_entity_list = newMaxEnt;
+
+                                newMaxEnt->next = max_ptr;
+                                newMaxEnt->ent_ptr = ent_b;
+                                //}
+                            }
+
+                            if (rel_p->next_b != NULL)
+                                rel_p = rel_p->next_b;
+                            else
+                                break;
+
+                        }
+
+                    }
+                }
+
+                //1.3 se alla fine newMaxFound è false -> cancella il tipo di relazione
+                if(!newMaxFound){
+                    //printf("\n[DEBUG] Cancella anche il tipo di relazione!");
+                    remRelType = true;
+                }
+
 
             } else {
                 //Tse ci sono anche altri nella lista dei max rimuovo solo lui dalla lista dei max e fine
@@ -1265,6 +1408,21 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
             rel_p_b_pre->next_b = rel_p_b->next_b;
             free(rel_p_b);
             rel_p_b = NULL;
+        }
+
+        if(remRelType) {
+
+            if (rel_t_p_pre == NULL && rel_t_p->next != NULL) {
+                relation_t_head = rel_t_p->next;
+                free(rel_t_p);
+            } else if (rel_t_p_pre == NULL && rel_t_p->next == NULL) {
+                relation_t_head = NULL;
+                free(rel_t_p);
+            } else if (rel_t_p_pre != NULL && rel_t_p->next != NULL) {
+                rel_t_p_pre->next = rel_t_p->next;
+                free(rel_t_p);
+            }
+
         }
 
         return true;
