@@ -1410,42 +1410,17 @@ bool delEnt(char *str, entity *e){
 
                             while (rel_p != NULL) {
 
-                                if (rel_p->receiving->rel_ent_counters[rel_t_p->index] == newMax) {
+                                //ignore rel to be deleted since it will be deleted at the end of the function
+                                if ((rel_p->receiving->rel_ent_counters[rel_t_p->index] == newMax) &&
+                                        !((strcmp(rel_p->receiving->id_ent, rel_p_a->receiving->id_ent) == 0) &&
+                                    strcmp(rel_p->sender->id_ent, rel_p_a->sender->id_ent) == 0)) {
+
                                     newMaxFound = true;
-                                    printf("\n[DEBUG] Ho trovato un nuovo max: %s", rel_p->receiving->id_ent);
+                                    printf("\n[DEBUG] Ho trovato un nuovo max: %s, nella rel_hash_rec[%d]", rel_p->receiving->id_ent, k);
 
                                     //inserisci in ordine alfabetico alla lista dei max
                                     max_ptr = rel_t_p->max_entity_list;
                                     max_entity *max_ptr_pre = NULL;
-                                    /*
-                                    while (max_ptr != NULL) {
-
-                                        printf("\nmax_ptr -> %s", max_ptr->ent_ptr->id_ent);
-                                        printf("\nrel_p->receving->id_ent -> %s", rel_p->receiving->id_ent);
-
-                                        if (strcmp(max_ptr->ent_ptr->id_ent, rel_p->receiving->id_ent) < 0) {
-                                            //printf("\n------------------------------------continua a proseguire!!");
-                                            //alreadyAdded = true;
-                                            break;
-                                        }
-
-                                        if (max_ptr->next != NULL) {
-                                            max_ptr_pre = max_ptr;
-                                            max_ptr = max_ptr->next;
-                                        } else {
-                                            break;
-                                        }
-                                    }
-
-                                    if (max_ptr != NULL)
-                                        printf("\n[DEBUG] max_ptr-> %s", max_ptr->ent_ptr->id_ent);
-                                    else
-                                        printf("\n[DEBUG] max_ptr-> null");
-
-                                    if (max_ptr_pre != NULL)
-                                        printf("\n[DEBUG] max_ptr_pre-> %s", max_ptr_pre->ent_ptr->id_ent);
-                                    else
-                                printf("\n[DEBUG] max_ptr_pre-> null");*/
 
 
                                     //adesso max_ptr punta al primo > e max_ptr_pre punta al primo minore
@@ -1455,39 +1430,6 @@ bool delEnt(char *str, entity *e){
                                     max_entity *newMaxEnt;
                                     newMaxEnt = (max_entity *) malloc(sizeof(max_entity));
 
-                                    /*
-                                    if (k == 0) {
-                                        //inserisci prima
-                                        rel_t_p->max_entity_list = newMaxEnt;
-                                        newMaxEnt->next = max_ptr;
-                                        newMaxEnt->ent_ptr = ent_b;
-
-                                    } else {*/
-                                    //inserisci dopo
-                                    /*
-                                    printf("\n + qui che devo sistemare!");
-
-                                    if (max_ptr != NULL) {
-
-                                        if (max_ptr_pre != NULL) {
-                                            newMaxEnt->next = max_ptr_pre->next;
-                                            max_ptr_pre = newMaxEnt;
-
-                                        }
-                                        else
-                                            rel_t_p->max_entity_list = newMaxEnt;
-
-                                        newMaxEnt->next = max_ptr;
-                                        newMaxEnt->ent_ptr = rel_p->receiving;
-
-                                        //}
-                                    } else {
-                                        printf("\n SONO IN QUESTO CASO NO?");
-                                        rel_t_p->max_entity_list = newMaxEnt;
-                                        newMaxEnt->ent_ptr = rel_p->receiving;
-                                        printf("newMaxEnt: %s", newMaxEnt->ent_ptr->id_ent);
-                                        newMaxEnt->next = NULL;
-                                    }*/
 
                                     while (max_ptr != NULL) {
 
@@ -1517,8 +1459,9 @@ bool delEnt(char *str, entity *e){
                                     newMaxEnt->ent_ptr = rel_p->receiving;
                                 }
 
-                                if (rel_p->next_b != NULL)
+                                if (rel_p->next_b != NULL) {
                                     rel_p = rel_p->next_b;
+                                }
                                 else
                                     break;
 
@@ -1606,7 +1549,6 @@ bool delEnt(char *str, entity *e){
             printf("\n[DEBUG] rel_p_a_pre -> NULL");*/
 
         //NOTA la free la faccio dopo con rel_p_b perchè seno lo farebbe 2 volte
-        //TODO SEMBRA ESSERE QUI IL PROBLEMA! 1.22 di notte
         /*
         if(rel_p_a != NULL)
             printf("\n[DEBUG] rel_p_a -> %s %s", rel_p_a->sender->id_ent, rel_p_a->receiving->id_ent);
@@ -1649,7 +1591,6 @@ bool delEnt(char *str, entity *e){
             //free(rel_p_a);
             //rel_p_a = NULL;
         } else if(rel_p_a->next_a == NULL && rel_p_a_pre != NULL){
-            //TODO è qui l'errore??
             //printf("\n\n--------------------------è qui l'errore?");
             //rel_t_p->relation_sender_hash[h_a] = rel_p_a_pre;
             rel_p_a_pre->next_a = NULL;
