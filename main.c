@@ -1451,10 +1451,10 @@ bool delEnt(char *str, entity *e) {
 
 
         //adesso ho tutto l'occorrente per cancellare la relazione
-        entity *ent_b = rel_p_b->receiving;
-        /*
-        printf("\n[DEBUG] ent_b -> %s", ent_b->id_ent);
-        if(rel_t_p_pre != NULL)
+        entity *ent_b = rel_p_a->receiving;
+
+        //printf("\n[DEBUG] ent_b -> %s", ent_b->id_ent);
+        /*if(rel_t_p_pre != NULL)
             printf("\n[DEBUG] rel_t_p_pre -> %s, index %d", rel_t_p_pre->id_rel, rel_t_p_pre->max);
         else
             printf("\n[DEBUG] rel_t_p_pre -> NULL");
@@ -1573,10 +1573,11 @@ bool delEnt(char *str, entity *e) {
                     rel_t_p->max = newMax;
                     //printf("\nnuovo max rel_t_p->max = %d", rel_t_p->max);
                     //printf("\nDEBUG cerca nuovi max per la rel_type: %s", rel_t_p->id_rel);
-
                     for (int k = 0; k < DEF_REL_N; k++) {
                         if (rel_t_p->relation_receiver_hash[k] != NULL) {
                             rel_p = rel_t_p->relation_receiver_hash[k];
+
+
 
                             while (rel_p != NULL) {
 
@@ -1602,35 +1603,79 @@ bool delEnt(char *str, entity *e) {
 
                                         while (max_ptr != NULL) {
 
-                                            //printf("\n[DEBUG] contronto %s con %s", max_ptr->ent_ptr->id_ent, ent_b->id_ent);
-                                            if (strcmp(max_ptr->ent_ptr->id_ent, ent_b->id_ent) < 0) {
-
-                                            } else if(strcmp(max_ptr->ent_ptr->id_ent, rel_p->receiving->id_ent) == 0){
+                                            //printf("\n[DEBUG] contronto %s con %s", max_ptr->ent_ptr->id_ent, rel_p_b->receiving->id_ent);
+                                                   //ent_b->id_ent);
+                                            if (strcmp(max_ptr->ent_ptr->id_ent, rel_p->receiving->id_ent) < 0) {
+                                                // break;
+                                            } else if (strcmp(max_ptr->ent_ptr->id_ent, rel_p->receiving->id_ent) == 0) {
+                                                //rel_p->receiving->id_ent) == 0){
                                                 alreadyAdded = true;
+                                                break;
+                                            } else {
+                                                //alreadyAdded= true;
+                                                //break;
+                                            }
+
+                                            if(max_ptr->next != NULL) {
+                                                max_ptr_pre = max_ptr;
+                                                max_ptr = max_ptr->next;
+                                            } else{
                                                 break;
                                             }
 
-
-                                            max_ptr_pre = max_ptr;
-                                            max_ptr = max_ptr->next;
-
                                         }
+
+
 
                                         //adesso max_ptr punta al primo > e max_ptr_pre punta al primo minore
                                         //max_ptr_pre->next = quello da aggiungere
                                         //quello da aggiungere -> next = max_ptr
-                                        if(!alreadyAdded ){
+                                        if (!alreadyAdded) {
                                             max_entity *newMaxEnt;
                                             newMaxEnt = (max_entity *) malloc(sizeof(max_entity));
 
+                                            newMaxEnt->ent_ptr = rel_p->receiving;
+
+                                            if(max_ptr_pre != NULL){
+
+                                                if(strcmp(max_ptr->ent_ptr->id_ent, newMaxEnt->ent_ptr->id_ent) > 0){
+                                                    max_ptr_pre->next = newMaxEnt;
+                                                    newMaxEnt->next = max_ptr;
+                                                } else {
+                                                    max_ptr->next = newMaxEnt;
+                                                }
+
+                                            } else {
+
+                                                if(max_ptr != NULL){
+
+                                                    if(strcmp(max_ptr->ent_ptr->id_ent, newMaxEnt->ent_ptr->id_ent) > 0){
+                                                        rel_t_p->max_entity_list = newMaxEnt;
+                                                        newMaxEnt->next = max_ptr;
+                                                    } else {
+                                                        max_ptr->next = newMaxEnt;
+                                                    }
+
+                                                } else {
+
+                                                    rel_t_p->max_entity_list = newMaxEnt;
+                                                    newMaxEnt->next = NULL;
+
+
+                                                }
+
+
+                                            }
+                                            /*
                                             if (max_ptr_pre != NULL)
                                                 max_ptr_pre->next = newMaxEnt;
                                             else
                                                 rel_t_p->max_entity_list = newMaxEnt;
 
                                             newMaxEnt->next = max_ptr;
-                                            newMaxEnt->ent_ptr = rel_p->receiving;
+                                           // newMaxEnt->ent_ptr = rel_p->receiving;*/
                                         }
+
 
                                 }
 
@@ -1681,22 +1726,22 @@ bool delEnt(char *str, entity *e) {
                     //adesso se pre è null vuol dire che quello cercato è la testa
                     //se pre è != NULL allora devo togliere quello dopo la testa
                     if (max_ptr_pre == NULL && max_ptr->next == NULL) {
-                        printf("\nDIO CAN CASO A");
+                        //printf("\nDIO CAN CASO A");
                         rel_t_p->max_entity_list->ent_ptr = max_ptr->next->ent_ptr;
                         rel_t_p->max_entity_list->next = NULL;
                         free(max_ptr);
                     } else if (max_ptr_pre != NULL && max_ptr->next == NULL) {
-                        printf("\nDIO CAN CASO B");
+                        //printf("\nDIO CAN CASO B");
                         max_ptr_pre->next = NULL;
                         free(max_ptr);
                     } else if (max_ptr_pre != NULL && max_ptr->next != NULL) {
-                        printf("\nDIO CAN CASO C");
+                        //printf("\nDIO CAN CASO C");
                         //printf("\nSONO IN QUESTO FOTTUTO CASO?");
                         max_ptr_pre->next = max_ptr->next;
                         //TODO CAPIRE PERCHé CASUA ERRORI VALGRIND
                         free(max_ptr);
                     } else if (max_ptr_pre == NULL && max_ptr->next != NULL) {
-                        printf("\n[DEGUG] DIO CAN CASO D non deve mai succedere, errore!");
+                        //printf("\n[DEGUG] DIO CAN CASO D non deve mai succedere, errore!");
                         rel_t_p->max_entity_list = max_ptr->next;
                         free(max_ptr);
                         /*
@@ -1709,12 +1754,12 @@ bool delEnt(char *str, entity *e) {
                         else
                             printf("max_ptr->NULL");*/
                     } else {
-                        printf("\nDIO CAN CASO E NUOVO CASO|!");
+                        //printf("\nDIO CAN CASO E NUOVO CASO|!");
                     }
                 } else {
-                    printf("\nDIO CAN CASO F");
+                    //printf("\nDIO CAN CASO F");
                     if(max_ptr->ent_ptr->rel_ent_counters[rel_t_p->index] < rel_t_p->max){
-                        printf("\nINSIDE CASO F");
+                        //printf("\nINSIDE CASO F");
                     }
                 }
             }
@@ -1859,19 +1904,19 @@ bool delEnt(char *str, entity *e) {
             }
 
             if (rel_t_p_pre == NULL && rel_t_p->next != NULL) {
-                printf("\nA");
+                //printf("\nA");
                 relation_t_head = rel_t_p->next;
                 free(rel_t_p);
             } else if (rel_t_p_pre == NULL && rel_t_p->next == NULL) {
-                printf("\nB");
+                //printf("\nB");
                 relation_t_head = NULL;
                 free(rel_t_p);
             } else if (rel_t_p_pre != NULL && rel_t_p->next != NULL) {
-                printf("\nC");
+                //printf("\nC");
                 rel_t_p_pre->next = rel_t_p->next;
                 free(rel_t_p);
             } else if(rel_t_p_pre != NULL && rel_t_p->next == NULL){
-                printf("\nD");
+                //printf("\nD");
                 rel_t_p_pre->next = NULL;
                 free(rel_t_p);
             } else {
@@ -1908,7 +1953,7 @@ bool delEnt(char *str, entity *e) {
             fputs("\" ", stdout);
 
             max_entity *ptr = rel_t_ptr->max_entity_list;
-            printf("\nrel_t_ptr->max_entity_list-> %s\n", ptr->ent_ptr->id_ent);
+            //printf("\nrel_t_ptr->max_entity_list-> %s\n", ptr->ent_ptr->id_ent);
             while (ptr != NULL) {
                 //printf("\"%s\" ", ptr->ent_ptr->id_ent);
                 fputs("\"", stdout);
