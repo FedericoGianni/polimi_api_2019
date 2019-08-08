@@ -706,6 +706,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
         newRelType->max_entity_list = NULL;
         newRelType->next = NULL;
 
+
         //TODO non va bene se rimuovo un tipo di relazione prima perchè poi mi assegna lo stesso index per
         //TODO 2 tipi diversi di relazione
 
@@ -1201,7 +1202,12 @@ bool delEnt(char *str, entity *e) {
             relation_t *rel_t_p = relation_t_head;
             relation_t *rel_t_p_pre = NULL;
 
+            relation_t *rel_t_p_tmp = NULL;
+
             while (rel_t_p != NULL) {
+
+
+                rel_t_p_tmp = rel_t_p->next;
 
                 //scorri la hash table dei sender
                 relation *rel_p_a = rel_t_p->relation_sender_hash[index];
@@ -1336,11 +1342,18 @@ bool delEnt(char *str, entity *e) {
                     }
                 }
 
+                /*
                 if (rel_t_p->next != NULL) {
                     rel_t_p_pre = rel_t_p;
                     rel_t_p = rel_t_p->next;
                 } else
+                    break;*/
+                if(rel_t_p_tmp != NULL){
+                    rel_t_p_pre = rel_t_p;
+                    rel_t_p = rel_t_p_tmp;
+                } else {
                     break;
+                }
 
             }
 
@@ -1479,7 +1492,8 @@ bool delEnt(char *str, entity *e) {
             //printf("\nif(rel_t_p->max_entity_list->next = %s == NULL)", rel_t_p->max_entity_list->next->ent_ptr->id_ent);
             //if (rel_t_p->max_entity_list->next == NULL) {
             //TODO se faccio questo diverso da null va ma dio cane
-            if(rel_t_p->max_entity_list != NULL){
+            //if(rel_t_p->max_entity_list == NULL){
+            if(1){
                 //printf("\n---------------------RICALOCLA LISTA DEI MAX");
 
                 //TODO ricalcola la lista dei max, elimina quella vecchia
@@ -1680,7 +1694,7 @@ bool delEnt(char *str, entity *e) {
                         //printf("\nSONO IN QUESTO FOTTUTO CASO?");
                         max_ptr_pre->next = max_ptr->next;
                         //TODO CAPIRE PERCHé CASUA ERRORI VALGRIND
-                        //free(max_ptr);
+                        free(max_ptr);
                     } else if (max_ptr_pre == NULL && max_ptr->next != NULL) {
                         printf("\n[DEGUG] DIO CAN CASO D non deve mai succedere, errore!");
                         rel_t_p->max_entity_list = max_ptr->next;
@@ -1845,15 +1859,19 @@ bool delEnt(char *str, entity *e) {
             }
 
             if (rel_t_p_pre == NULL && rel_t_p->next != NULL) {
+                printf("\nA");
                 relation_t_head = rel_t_p->next;
                 free(rel_t_p);
             } else if (rel_t_p_pre == NULL && rel_t_p->next == NULL) {
+                printf("\nB");
                 relation_t_head = NULL;
                 free(rel_t_p);
             } else if (rel_t_p_pre != NULL && rel_t_p->next != NULL) {
+                printf("\nC");
                 rel_t_p_pre->next = rel_t_p->next;
                 free(rel_t_p);
             } else if(rel_t_p_pre != NULL && rel_t_p->next == NULL){
+                printf("\nD");
                 rel_t_p_pre->next = NULL;
                 free(rel_t_p);
             } else {
