@@ -112,6 +112,9 @@ typedef struct rem_rel_t{
     //relation *p_b_pre;
     relation *p_b_next;
 
+    //true if the current rem_rel exection has aslo deleted the rel_type
+    bool deletedRelType;
+
 }rem_rel_t;
 
 //GLOBAL VARIABLES
@@ -786,7 +789,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
                 rel_t_ptr_prev->next = newRelType;
                 newRelType->next = rel_t_ptr;
             } else {
-                //printf("\n[DEBUG] ATTENZIONE c'è un caso non considerato nell'inserimento del rel_type!!");
+                printf("\n[DEBUG] ATTENZIONE c'è un caso non considerato nell'inserimento del rel_type!!");
             }
 
 
@@ -1206,8 +1209,11 @@ bool delEnt(char *str, entity *e) {
 
             while (rel_t_p != NULL) {
 
-
-                rel_t_p_tmp = rel_t_p->next;
+                //TODO non dovrebbe serviere if prchè lo controlla in fondo senò salterebbe un esecuzione
+                //if(rel_t_p->next != NULL)
+                    rel_t_p_tmp = rel_t_p->next;
+                //else
+                 //   break;
 
                 //scorri la hash table dei sender
                 relation *rel_p_a = rel_t_p->relation_sender_hash[index];
@@ -1280,64 +1286,64 @@ bool delEnt(char *str, entity *e) {
                     }
                 }
 
+                if(!rem_rel_ret.deletedRelType) {
 
+                    //scorri la hash table dei receiver
+                    relation *rel_p_b = rel_t_p->relation_receiver_hash[index];
+                    relation *rel_p_b_pre = NULL;
 
+                    relation *r_b_pre_next = NULL;
+                    relation *r_b_next = NULL;
 
+                    while (rel_p_b != NULL) {
 
-                //scorri la hash table dei receiver
-                relation *rel_p_b = rel_t_p->relation_receiver_hash[index];
-                relation *rel_p_b_pre = NULL;
+                        if (strcmp(rel_p_b->receiving->id_ent, str) == 0) {
+                            //printf("\n chiamo delrel per receiver!");
+                            h_a = hash(rel_p_b->sender->id_ent);
+                            h_b = hash(rel_p_b->receiving->id_ent);
 
-                relation *r_b_pre_next = NULL;
-                relation *r_b_next = NULL;
+                            relation *rel_p_a_tmp = rel_t_p->relation_sender_hash[h_a];
+                            relation *rel_p_a_tmp_pre = NULL;
 
-                while (rel_p_b != NULL) {
+                            while (rel_p_a_tmp != NULL) {
 
-                    if (strcmp(rel_p_b->receiving->id_ent, str) == 0) {
-                        //printf("\n chiamo delrel per receiver!");
-                        h_a = hash(rel_p_b->sender->id_ent);
-                        h_b = hash(rel_p_b->receiving->id_ent);
+                                if (strcmp(rel_p_b->receiving->id_ent, rel_p_a_tmp->receiving->id_ent) == 0 &&
+                                    strcmp(rel_p_b->sender->id_ent, rel_p_a_tmp->sender->id_ent) == 0) {
 
-                        relation *rel_p_a_tmp = rel_t_p->relation_sender_hash[h_a];
-                        relation *rel_p_a_tmp_pre = NULL;
-
-                        while (rel_p_a_tmp != NULL) {
-
-                            if (strcmp(rel_p_b->receiving->id_ent, rel_p_a_tmp->receiving->id_ent) == 0 &&
-                                strcmp(rel_p_b->sender->id_ent, rel_p_a_tmp->sender->id_ent) == 0) {
-
-                                if (rel_p_b->next_b != NULL) {
-                                    r_b_pre_next = rel_p_b;
-                                    r_b_next = rel_p_b->next_b;
+                                    if (rel_p_b->next_b != NULL) {
+                                        r_b_pre_next = rel_p_b;
+                                        r_b_next = rel_p_b->next_b;
+                                    }
+                                    break;
                                 }
-                                break;
+
+                                if (rel_p_a_tmp->next_a != NULL) {
+                                    rel_p_a_tmp_pre = rel_p_a_tmp;
+                                    rel_p_a_tmp = rel_p_a_tmp->next_a;
+                                } else {
+                                    break;
+                                }
                             }
 
-                            if (rel_p_a_tmp->next_a != NULL) {
-                                rel_p_a_tmp_pre = rel_p_a_tmp;
-                                rel_p_a_tmp = rel_p_a_tmp->next_a;
+                            //printf("\nHASH B CANCELLA rel(%s, %s)", rel_p_b->sender->id_ent, rel_p_b->receiving->id_ent);
+                            rem_rel_ret = rem_rel(rel_t_p_pre, rel_t_p, rel_p_a_tmp_pre, rel_p_a_tmp, rel_p_b_pre,
+                                                  rel_p_b, h_a, h_b);
+
+                            if (rem_rel_ret.p_b_next != NULL) {
+                                //rel_p_a_pre = rem_rel_ret.p_a;
+                                rel_p_b = rem_rel_ret.p_b_next;
                             } else {
                                 break;
                             }
-                        }
 
-                        //printf("\nHASH B CANCELLA rel(%s, %s)", rel_p_b->sender->id_ent, rel_p_b->receiving->id_ent);
-                        rem_rel_ret = rem_rel(rel_t_p_pre, rel_t_p, rel_p_a_tmp_pre, rel_p_a_tmp, rel_p_b_pre, rel_p_b, h_a, h_b);
-
-                        if (rem_rel_ret.p_b_next != NULL) {
-                            //rel_p_a_pre = rem_rel_ret.p_a;
-                            rel_p_b = rem_rel_ret.p_b_next;
                         } else {
-                            break;
-                        }
 
-                    } else {
-
-                        if (rel_p_b->next_b != NULL) {
-                            rel_p_b_pre = rel_p_b;
-                            rel_p_b = rel_p_b->next_b;
-                        } else {
-                            break;
+                            if (rel_p_b->next_b != NULL) {
+                                rel_p_b_pre = rel_p_b;
+                                rel_p_b = rel_p_b->next_b;
+                            } else {
+                                break;
+                            }
                         }
                     }
                 }
@@ -1425,6 +1431,7 @@ bool delEnt(char *str, entity *e) {
 
         rem_rel_ret.p_a_next = NULL;
         rem_rel_ret.p_b_next = NULL;
+        rem_rel_ret.deletedRelType = false;
 
         //printf("\nrem_rel(%s,%s)", rel_p_a->sender->id_ent, rel_p_a->receiving->id_ent);
         /*
@@ -1510,6 +1517,7 @@ bool delEnt(char *str, entity *e) {
                 max_entity *tmp_next = NULL;
                 while (max_ptr != NULL) {
                     //printf("\nmax_ptr -> %s", max_ptr->ent_ptr->id_ent);
+                    //TODO aggiunta di stamattina
                     tmp_next = max_ptr->next;
 
                     if (max_ptr != rel_t_p->max_entity_list) {
@@ -1643,6 +1651,7 @@ bool delEnt(char *str, entity *e) {
                                                     newMaxEnt->next = max_ptr;
                                                 } else {
                                                     max_ptr->next = newMaxEnt;
+                                                    newMaxEnt->next = NULL;
                                                 }
 
                                             } else {
@@ -1654,6 +1663,7 @@ bool delEnt(char *str, entity *e) {
                                                         newMaxEnt->next = max_ptr;
                                                     } else {
                                                         max_ptr->next = newMaxEnt;
+                                                        newMaxEnt->next = NULL;
                                                     }
 
                                                 } else {
@@ -1922,6 +1932,8 @@ bool delEnt(char *str, entity *e) {
             } else {
                 printf("\nNON DEVE MAI SUCCEDERE");
             }
+
+            rem_rel_ret.deletedRelType = true;
 
         }
 
