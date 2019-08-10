@@ -33,8 +33,6 @@
 
 
 //GLOBAL DATA STRUCTURES
-int debugcont = 0;
-
 typedef struct entity
 {
 
@@ -200,7 +198,6 @@ void main()
             //free(short_name);
 
         } else if(strncmp(input, DELENT, 6) == 0){
-            //TODO remove this entity also from every relation
             //printf("\n[DEBUG] read deleent\n");
             //short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
             strncpy(short_name, &input[8], strlen(input) - 10);
@@ -1650,9 +1647,6 @@ bool delEnt(char *str, entity *e) {
             relation *rel_p_a_pre, relation *rel_p_a, relation *rel_p_b_pre, relation *rel_p_b,
             int h_a, int h_b) {
 
-        //TODO vedere se puo funzionare: lo uso come return type di rem_rel
-        //rem_rel_t rem_rel_ret;// = (rem_rel_t *) malloc(sizeof(rem_rel_t));
-
         rem_rel_ret.p_a_pre = NULL;
         rem_rel_ret.p_b_pre = NULL;
 
@@ -1713,13 +1707,14 @@ bool delEnt(char *str, entity *e) {
         //printf("\n[DEBUG] contatore di %s della rel %s dopo: %d", ent_b->id_ent, rel_t_p->id_rel, ent_b->rel_ent_counters[rel_t_p->index]);
 
         bool remRelType = false;
+        max_entity *max_ptr = rel_t_p->max_entity_list;
 
         //se la relazione da rimuovere contribuiva a rendere ent_b uno dei max riceventi
         //printf("\n[DEBUG] if(cont_ent_b == rel_t_p->max) -> if(%d == %d)", prev_ent_b_cont, rel_t_p->max);
         //printf("if(%d == %d)", prev_ent_b_cont, rel_t_p->max);
         //printf("\nrel.t.p punta a %s", rel_t_p->id_rel);
-        //if (prev_ent_b_cont == rel_t_p->max) {
-        if(1){
+        if (prev_ent_b_cont == rel_t_p->max) {
+
             //TODO ent_b era nella lista dei max
             //TODO 2 casi -> A se è da solo son cazzi e va ricalcolata la lista dei max
 
@@ -1728,8 +1723,10 @@ bool delEnt(char *str, entity *e) {
             //printf("\nif(rel_t_p->max_entity_list->next = %s == NULL)", rel_t_p->max_entity_list->next->ent_ptr->id_ent);
             //if (rel_t_p->max_entity_list->next == NULL) {
             //TODO se faccio questo diverso da null va ma dio cane
-            //if(rel_t_p->max_entity_list == NULL){
-            if(1){
+
+            //dovrei farlo solo quando c'era solo lui tra i max il ricalcolo
+            if(rel_t_p->max_entity_list->next == NULL){
+            //if(1){
                 //printf("\n---------------------RICALOCLA LISTA DEI MAX");
 
                 //TODO ricalcola la lista dei max, elimina quella vecchia
@@ -1742,7 +1739,7 @@ bool delEnt(char *str, entity *e) {
                 //TODO cancella la vecchia lista dei max free -> va fatto in ogni caso anche se devo cancellare tipo rel
                 //printf("\nrel_t_p -> %s", rel_t_p->id_rel);
 
-                max_entity *max_ptr = rel_t_p->max_entity_list;
+                //max_ptr = rel_t_p->max_entity_list;
                 max_entity *tmp_next = NULL;
                 while (max_ptr != NULL) {
                     //printf("\nmax_ptr -> %s", max_ptr->ent_ptr->id_ent);
@@ -1905,102 +1902,22 @@ bool delEnt(char *str, entity *e) {
 
                                                 }
                                             }
-                                            /*
-                                            if(max_ptr_pre != NULL){
-
-                                                printf("\n--------------------------------------");
-                                                printf("\nmax_ptr_pre -> %s", max_ptr_pre->ent_ptr->id_ent);
-                                                printf("\nmax_ptr -> %s", max_ptr->ent_ptr->id_ent);
-                                                printf("\nnewMaxEnt -> %s", newMaxEnt->ent_ptr->id_ent);
-
-
-                                                if(strcmp(max_ptr->ent_ptr->id_ent, newMaxEnt->ent_ptr->id_ent) > 0){
-                                                    printf("\nstrcmp(%s,%s) > 0", max_ptr_pre->ent_ptr->id_ent, ent_b->id_ent);
-                                                    //printf("\ninserisci dopo %s")
-                                                    if(strcmp(max_ptr_pre->ent_ptr->id_ent, newMaxEnt->ent_ptr->id_ent) < 0){
-                                                        max_ptr_pre->next = newMaxEnt;
-                                                        newMaxEnt->next = max_ptr;
-                                                    } else {
-                                                        max_ptr->next = newMaxEnt;
-                                                        newMaxEnt->next = NULL;
-                                                    }
-                                                } else {
-                                                    printf("\nstrcmp(%s,%s) <= 0", max_ptr_pre->ent_ptr->id_ent, ent_b->id_ent);
-                                                    max_ptr_pre->next = newMaxEnt;
-                                                    max_ptr->next = NULL;
-                                                    newMaxEnt->next = max_ptr;
-                                                    //newMaxEnt->next = NULL;
-                                                }
-
-                                            } else {
-
-                                                if (max_ptr != NULL) {
-
-                                                    if (strcmp(max_ptr->ent_ptr->id_ent, ent_b->id_ent) > 0) {
-                                                        rel_t_p->max_entity_list = newMaxEnt;
-                                                        newMaxEnt->next = max_ptr;
-                                                    } else {
-                                                        max_ptr->next = newMaxEnt;
-                                                        newMaxEnt->next = NULL;
-                                                    }
-
-                                                } else {
-
-                                                    if(rel_t_p->max_entity_list == NULL) {
-                                                        rel_t_p->max_entity_list = newMaxEnt;
-                                                        newMaxEnt->next = NULL;
-                                                    } else {
-
-                                                        if(strcmp(rel_t_p->max_entity_list->ent_ptr->id_ent, newMaxEnt->ent_ptr->id_ent) > 0){
-                                                            rel_t_p->max_entity_list->next = newMaxEnt;
-                                                            newMaxEnt->next = NULL;
-
-                                                        } else {
-                                                            newMaxEnt->next = rel_t_p->max_entity_list;
-                                                            rel_t_p->max_entity_list = newMaxEnt;
-                                                        }
-                                                    }
-                                                }
-
-                                            }
-                                            printf("\nLISTA MAX");
-                                            max_entity *tmp = rel_t_p->max_entity_list;
-                                            while(tmp != NULL){
-                                                printf("\n%s -> ", tmp->ent_ptr->id_ent);
-                                                if(tmp->next != NULL)
-                                                    tmp = tmp->next;
-                                                else
-                                                    break;
-                                            }
-                                            printf("\n---------------------------------------");
-
-                                            */
-
-                                            //}
-                                            /*
-                                            if (max_ptr_pre != NULL)
-                                                max_ptr_pre->next = newMaxEnt;
-                                            else
-                                                rel_t_p->max_entity_list = newMaxEnt;
-
-                                            newMaxEnt->next = max_ptr;
-                                           // newMaxEnt->ent_ptr = rel_p->receiving;*/
                                         }
 
+                                    }
+
+                                    if (rel_p->next_b != NULL) {
+                                        rel_p = rel_p->next_b;
+                                    }
+                                    else
+                                        break;
 
                                 }
-
-                                if (rel_p->next_b != NULL) {
-                                    rel_p = rel_p->next_b;
-                                }
-                                else
-                                    break;
-
                             }
-                        }
 
+                        }
                     }
-                }
+
 
                 //1.3 se alla fine newMaxFound è false -> cancella il tipo di relazione
                 if (!newMaxFound) {
@@ -2009,11 +1926,12 @@ bool delEnt(char *str, entity *e) {
                 }
 
             } else {
+
                 //se ci sono anche altri nella lista dei max rimuovo solo lui dalla lista dei max e fine
                 //2 casi -> devo toglierlo dalla cima o toglierlo generico
                 //se come prima ci sono 2 casi del caso A
                 //printf("\nCASO B: RIMUOVI SOLO LUI DALLA LISTA DEI MAX");
-                max_entity *max_ptr = rel_t_p->max_entity_list;
+                //max_entity *max_ptr = rel_t_p->max_entity_list;
                 max_entity *max_ptr_pre = NULL;
 
                 //TODO se faccio dobule linked list non devo scorrere ogni volta per trovare il pre
@@ -2021,6 +1939,7 @@ bool delEnt(char *str, entity *e) {
                 while (!found && max_ptr != NULL) {
                     //printf("\nstrcmp (%s, %s)", max_ptr->ent_ptr->id_ent, ent_b->id_ent);
                     if (strcmp(max_ptr->ent_ptr->id_ent, ent_b->id_ent) == 0) {
+                        //printf("\ntrovato quello da rimuovere dalla lista dei max: %s", ent_b->id_ent);
                         found = true;
                         break;
                     }
@@ -2031,7 +1950,9 @@ bool delEnt(char *str, entity *e) {
                     } else break;
                 }
 
-                if(!found) {
+                //printf("\nquello da togliere dai max per %s è %s",rel_t_p->id_rel, max_ptr->ent_ptr->id_ent);
+
+                //if(!found) {
 
                     //TODO SEMBRA ESSERCI QUI UN BUGGETTO
                     //adesso se pre è null vuol dire che quello cercato è la testa
@@ -2064,15 +1985,15 @@ bool delEnt(char *str, entity *e) {
                             printf("max_ptr-> %s", max_ptr->ent_ptr->id_ent);
                         else
                             printf("max_ptr->NULL");*/
-                    } else {
-                        //printf("\nDIO CAN CASO E NUOVO CASO|!");
-                    }
-                } else {
+                    } //else {
+                      //  printf("\nDIO CAN CASO E NUOVO CASO|!");
+                    //}
+                /*} else {
                     //printf("\nDIO CAN CASO F");
                     if(max_ptr->ent_ptr->rel_ent_counters[rel_t_p->index] < rel_t_p->max){
                         //printf("\nINSIDE CASO F");
                     }
-                }
+                }*/
             }
         }
 
