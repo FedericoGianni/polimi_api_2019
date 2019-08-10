@@ -1610,25 +1610,25 @@ bool delEnt(char *str, entity *e) {
             //printf("\t free(%s)", ptr->id_ent);
             //TODO questa free causa errori?
             entity_hash[index] = NULL;
-            //free(ptr);
+            free(ptr);
             //ptr->next = NULL;
         } else if (prv == NULL && ptr->next != NULL) {
             //printf("\nCASO B");
             //printf("free(%s)", ptr->id_ent);
             entity_hash[index] = ptr->next;
-            //free(ptr);
+            free(ptr);
         } else if (ptr->next != NULL && prv != NULL) {
             //printf("\nCASO C");
             //printf("free(%s)", ptr->id_ent);
             prv->next = ptr->next;
-            //free(ptr);
+            free(ptr);
         } else if (prv != NULL && ptr->next == NULL) {
             //printf("\nCASO D?");
             //printf("free(%s)", ptr->id_ent);
             prv->next = NULL;
-            //free(ptr);
+            free(ptr);
         } else {
-            //printf("\nCASO E");
+            //printf("\nCASO E non deve mai succedere");
             //free(ptr->id_ent);
             //free(ptr);
         }
