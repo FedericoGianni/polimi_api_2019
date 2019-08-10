@@ -292,6 +292,7 @@ void main()
             strncpy(id_rel, &input[curr_pos], i);
             id_rel[i] = '\0';
 
+            //printf("\n[DEBUG] ADDREL");
             //printf("\nid_a: %s ", id_a);
             //printf("id_b: %s ", id_b);
             //printf("id_rel: %s ", id_rel);
