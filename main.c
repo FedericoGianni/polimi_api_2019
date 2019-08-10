@@ -141,6 +141,8 @@ int deleted_rel_type_indexes[DEF_DEL_REL_T_IND_L];
 
 //FUNCTIONS DEFINITION
 char *inputString(FILE *,int);
+void itoa(int n, char s[]);
+void reverse(char s[]);
 
 int hash_n(char *);
 int hash_r(char *);
@@ -197,7 +199,7 @@ void main()
             //short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
             strncpy(short_name, &input[8], strlen(input) - 10);
             short_name[strlen(input)-10] = '\0';
-            //printf("\n[DEBUG] Short_name: %s", short_name);
+            printf("\n[DEBUG] ADDENT Short_name: %s", short_name);
 
             //printf("\n[DEBUG]----------------- chiamo addEnt per aggiungere un entità-------------");
             addEnt(short_name, entity_hash[0]);
@@ -209,7 +211,7 @@ void main()
             //short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
             strncpy(short_name, &input[8], strlen(input) - 10);
             short_name[strlen(input)-10] = '\0';
-            //printf("\n[DEBUG] Short_name: %s", short_name);
+            printf("\n[DEBUG] ADDENT Short_name: %s", short_name);
             //printf("\n delete: %s", short_name);
             delEnt(short_name, entity_hash[0]);
 
@@ -2292,7 +2294,40 @@ bool delEnt(char *str, entity *e) {
 
     }
 
-    void print() {
+
+    /* itoa:  convert n to characters in s */
+    void itoa(int n, char s[])
+    {
+        int i, sign;
+
+        if ((sign = n) < 0)  /* record sign */
+            n = -n;          /* make n positive */
+        i = 0;
+        do {       /* generate digits in reverse order */
+            s[i++] = n % 10 + '0';   /* get next digit */
+        } while ((n /= 10) > 0);     /* delete it */
+        if (sign < 0)
+            s[i++] = '-';
+        s[i] = '\0';
+        reverse(s);
+    }
+
+
+    /* reverse:  reverse string s in place */
+    void reverse(char s[])
+    {
+        int i, j;
+        char c;
+
+        for (i = 0, j = strlen(s)-1; i<j; i++, j--) {
+            c = s[i];
+            s[i] = s[j];
+            s[j] = c;
+        }
+    }
+
+
+void print() {
 
 
         printf("[DEBUG] Lista entità: ");
