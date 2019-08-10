@@ -17,7 +17,7 @@
 #define DEF_INPUT_L_INC 16
 
 //entity hash table length
-#define DEF_ENT_N 10000
+#define DEF_ENT_N 100000
 //entity dynamic array initial length
 #define DEF_ENT_L 12
 
@@ -29,15 +29,17 @@
 //size for the array of entities who has max inc rel
 #define DEF_MAX_REL_L 12
 
-#define DEF_DEL_REL_T_IND_L 50
+#define DEF_DEL_REL_T_IND_L 12
 
-#define DEF_OUTPUT_L 5000
+#define DEF_OUTPUT_L 1000
 
 //GLOBAL DATA STRUCTURES
 char virgoletta[2] = "\"";
+char puntoevirgola[2] = ";";
 char virgolettaspazio[3] = "\" ";
 char acapo[2] = "\n";
 char vuoto[1] = {"\0"};
+char max[1];
 
 typedef struct entity
 {
@@ -140,6 +142,9 @@ relation_t *relation_t_head;
 int deleted_rel_type_indexes[DEF_DEL_REL_T_IND_L];
 
 //FUNCTIONS DEFINITION
+void itoa(int n, char s[]);
+void reverse(char s[]);
+
 char *inputString(FILE *,int);
 
 int hash_n(char *);
@@ -398,6 +403,23 @@ char *inputString(FILE* fp, int size){
     str[len++]='\0';
 
     return realloc(str, sizeof(char)*len);
+}
+
+/* itoa:  convert n to characters in s */
+void itoa(int n, char s[])
+{
+    int i, sign;
+
+    if ((sign = n) < 0)  /* record sign */
+        n = -n;          /* make n positive */
+    i = 0;
+    do {       /* generate digits in reverse order */
+        s[i++] = n % 10 + '0';   /* get next digit */
+    } while ((n /= 10) > 0);     /* delete it */
+    if (sign < 0)
+        s[i++] = '-';
+    s[i] = '\0';
+    reverse(s);
 }
 
 //replace the relation types array passed as a pointer with a new relation_t array of incremented size
@@ -2197,11 +2219,12 @@ bool delEnt(char *str, entity *e) {
 
         while (rel_t_ptr != NULL) {
 
+            char output[DEF_OUTPUT_L] = "\0";
 
             if(rel_t_ptr->max > 0) {
                 if (i != 0) {
-                    //strcat(output, " ");
-                    fputs(" ", stdout);
+                    strcat(output, " ");
+                    //fputs(" ", stdout);
                     //printf(" ");
                 }
 
@@ -2209,7 +2232,7 @@ bool delEnt(char *str, entity *e) {
                 //fputs("\"", stdout);
                 //fputs(rel_t_ptr->id_rel, stdout);
                 //fputs("\" ", stdout);
-                char output[DEF_OUTPUT_L] = "\0";
+
                 strcat(output, virgoletta);
                 strcat(output, rel_t_ptr->id_rel);
                 strcat(output, virgolettaspazio);
@@ -2226,11 +2249,13 @@ bool delEnt(char *str, entity *e) {
                     ptr = ptr->next;
                 }
 
-                fputs(output, stdout);
-                printf("%d;", rel_t_ptr->max);
-
+                //printf("%d;", rel_t_ptr->max);
+                itoa(rel_t_ptr->max, max);
+                strcat(output, max);
+                strcat(output, puntoevirgola);
 
                 //putc_unlocked(rel_t_ptr->max, stdout);
+                fputs(output, stdout);
                 //fputs(rel_t_ptr->max, stdout);
                 i++;
             }
@@ -2441,5 +2466,20 @@ void sort_rel_t_array(){
 
         i++;
     }*/
+}
+
+
+
+/* reverse:  reverse string s in place */
+void reverse(char s[])
+{
+    int i, j;
+    char c;
+
+    for (i = 0, j = strlen(s)-1; i<j; i++, j--) {
+        c = s[i];
+        s[i] = s[j];
+        s[j] = c;
+    }
 }
 
