@@ -17,22 +17,28 @@
 #define DEF_INPUT_L_INC 16
 
 //entity hash table length
-#define DEF_ENT_N 100
+#define DEF_ENT_N 10000
 //entity dynamic array initial length
 #define DEF_ENT_L 12
 
 //initial relations type array length
 #define DEF_REL_T_L 12
 //relation hash table length
-#define DEF_REL_N 100000
+#define DEF_REL_N 10000
 
 //size for the array of entities who has max inc rel
 #define DEF_MAX_REL_L 12
 
 #define DEF_DEL_REL_T_IND_L 50
 
+#define DEF_OUTPUT_L 5000
 
 //GLOBAL DATA STRUCTURES
+char virgoletta[2] = "\"";
+char virgolettaspazio[3] = "\" ";
+char acapo[2] = "\n";
+char vuoto[1] = {"\0"};
+
 typedef struct entity
 {
 
@@ -136,7 +142,8 @@ int deleted_rel_type_indexes[DEF_DEL_REL_T_IND_L];
 //FUNCTIONS DEFINITION
 char *inputString(FILE *,int);
 
-int hash(char *);
+int hash_n(char *);
+int hash_r(char *);
 
 void sort_rel_t_array();
 rem_rel_t rem_rel(relation_t*, relation_t*, relation *, relation *, relation*, relation *, int, int);
@@ -427,7 +434,7 @@ char *replace_char_arr(char *str, int l_max, int inc) {
 
 bool addEnt(char *str, entity *e) {
 
-    int index = hash(str);
+    int index = hash_n(str);
     //printf("[DEBUG] indice dell'hash table calcolato su questo nome: %d\n", index);
 
     if(entity_hash[index] == NULL){
@@ -528,13 +535,21 @@ int hash(char *str) {
 
 //hash3
 
-int hash(char* str) {
+int hash_n(char* str) {
     unsigned int hash = 0;
     for (int i = 0 ; str[i] != '\0' && i < 10 ; i++)
     {
         hash = 31*hash + str[i];
     }
     return hash % DEF_ENT_N;
+}
+int hash_r(char* str) {
+    unsigned int hash = 0;
+    for (int i = 0 ; str[i] != '\0' && i < 10 ; i++)
+    {
+        hash = 31*hash + str[i];
+    }
+    return hash % DEF_REL_N;
 }
 
 
@@ -552,7 +567,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
     bool entity_b_found = false;
     entity *ent_a;
     entity *ent_b;
-    int ind_a = hash(id_a);
+    int ind_a = hash_n(id_a);
 
     //printf("\naddrel(%s, %s, %s)", id_a, id_b, id_rel);
     //printf("\n\nindex restituito da hash(%s): %d", id_a, ind_a);
@@ -586,7 +601,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
     }
 
 
-    int ind_b = hash(id_b);
+    int ind_b = hash_n(id_b);
     ptr = entity_hash[ind_b];
     //printf("\n\nindex resituoto da hash(%s): %d", id_b, ind_b);
 
@@ -665,7 +680,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
         if (found) {
             //printf("\n[DEBUG] Verifico che la relazione non esista già");
             bool alreadyRel = false;
-            int h = hash(ent_b->id_ent);
+            int h = hash_r(ent_b->id_ent);
             //printf("\nhash(ent->a)=%d", h);
             //printf("\nhash(R_Jander_Panell)=%d", hash("R_Jander_Panell"));
             relation *rel_p = rel_t_p->relation_receiver_hash[h];
@@ -913,7 +928,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
     //i punta al nuovo relation_t o a quello trovato se c'era già
     //printf("\n[DEBUG] dovrebbe puntare al rel type trovato o al nuovo se non c'era: rel_t_p -> %s",rel_t_p->id_rel);
 
-    int index_a = hash(id_a);
+    int index_a = hash_r(id_a);
     //printf("[DEBUG] indice dell'hash table calcolato su questo nome: %d\n", index_a);
 
     if (rel_t_p->relation_sender_hash[index_a] == NULL) {
@@ -937,7 +952,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
     //printf("-----------------------esco dall'else");
 
 
-    int index_b = hash(id_b);
+    int index_b = hash_r(id_b);
     //printf("[DEBUG] indice dell'hash table calcolato su questo nome: %d\n", index_b);
 
     if (rel_t_p->relation_receiver_hash[index_b] == NULL) {
@@ -1209,7 +1224,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
         //se arrivo qui il tipo di relazione esiste e ho anche il puntatore rel_t_p -> verifico se la relazione esiste o meno
         //se esiste mi salvo puntatore alla relazione, puntatore a ent_A puntatore a ent_B
         //printf("\n[DEBUG] il tipo di relazione esiste, ora verifico se c'è la relazione.");
-        int h_a = hash(id_a);
+        int h_a = hash_r(id_a);
         entity *ent_a = NULL;
         relation *rel_p_a = rel_t_p->relation_sender_hash[h_a];
         relation *rel_p_a_pre = NULL;
@@ -1253,7 +1268,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
          */
 
         //stessa cosa per l'hash table dei receiver
-        int h_b = hash(id_b);
+        int h_b = hash_r(id_b);
         entity *ent_b = NULL;
         relation *rel_p_b = rel_t_p->relation_receiver_hash[h_b];
         relation *rel_p_b_pre = NULL;
@@ -1313,7 +1328,7 @@ bool delEnt(char *str, entity *e) {
     //3. se il nome c'è -> 1. elimino tutte le relazioni che hanno a che fare con quel nome
     //                     2. aggiorno i vari contatori / lista di max per il report
     //                     3. elimino l'entità dalla hash table
-    int index = hash(str);
+    int index = hash_n(str);
     bool entityFound = false;
 
 
@@ -1403,8 +1418,8 @@ bool delEnt(char *str, entity *e) {
                 if (strcmp(rel_p_a->sender->id_ent, str) == 0) {
                     //printf("\n chiamo delrel per sender!");
                     //TODO rem_rel(relation_t*, relation_t*, relation *, relation *, relation*, relation *, int, int);
-                    h_a = hash(rel_p_a->sender->id_ent);
-                    h_b = hash(rel_p_a->receiving->id_ent);
+                    h_a = hash_r(rel_p_a->sender->id_ent);
+                    h_b = hash_r(rel_p_a->receiving->id_ent);
 
                     relation *rel_p_b_tmp = rel_t_p->relation_receiver_hash[h_b];
                     relation *rel_p_b_tmp_pre = NULL;
@@ -1511,8 +1526,8 @@ bool delEnt(char *str, entity *e) {
 
                     if (strcmp(rel_p_b->receiving->id_ent, str) == 0) {
                         //printf("\n chiamo delrel per receiver!");
-                        h_a = hash(rel_p_b->sender->id_ent);
-                        h_b = hash(rel_p_b->receiving->id_ent);
+                        h_a = hash_r(rel_p_b->sender->id_ent);
+                        h_b = hash_r(rel_p_b->receiving->id_ent);
 
                         relation *rel_p_a_tmp = rel_t_p->relation_sender_hash[h_a];
                         relation *rel_p_a_tmp_pre = NULL;
@@ -2179,29 +2194,42 @@ bool delEnt(char *str, entity *e) {
         }
 
 
+
         while (rel_t_ptr != NULL) {
+
+
             if(rel_t_ptr->max > 0) {
                 if (i != 0) {
+                    //strcat(output, " ");
                     fputs(" ", stdout);
                     //printf(" ");
                 }
 
                 //printf("\"%s\" ", rel_t_ptr->id_rel);
-                fputs("\"", stdout);
-                fputs(rel_t_ptr->id_rel, stdout);
-                fputs("\" ", stdout);
+                //fputs("\"", stdout);
+                //fputs(rel_t_ptr->id_rel, stdout);
+                //fputs("\" ", stdout);
+                char output[DEF_OUTPUT_L] = "\0";
+                strcat(output, virgoletta);
+                strcat(output, rel_t_ptr->id_rel);
+                strcat(output, virgolettaspazio);
 
                 max_entity *ptr = rel_t_ptr->max_entity_list;
                 //printf("\nrel_t_ptr->max_entity_list-> %s\n", ptr->ent_ptr->id_ent);
                 while (ptr != NULL) {
-                    //printf("\"%s\" ", ptr->ent_ptr->id_ent);
-                    fputs("\"", stdout);
-                    fputs(ptr->ent_ptr->id_ent, stdout);
-                    fputs("\" ", stdout);
+                    //fputs("\"", stdout);
+                    //fputs(ptr->ent_ptr->id_ent, stdout);
+                    //fputs("\" ", stdout);
+                    strcat(output, virgoletta);
+                    strcat(output, ptr->ent_ptr->id_ent);
+                    strcat(output, virgolettaspazio);
                     ptr = ptr->next;
                 }
 
+                fputs(output, stdout);
                 printf("%d;", rel_t_ptr->max);
+
+
                 //putc_unlocked(rel_t_ptr->max, stdout);
                 //fputs(rel_t_ptr->max, stdout);
                 i++;
@@ -2209,12 +2237,10 @@ bool delEnt(char *str, entity *e) {
 
             rel_t_ptr = rel_t_ptr->next;
 
-
-
-
         }
 
         fputs("\n", stdout);
+
 
 
         /*
