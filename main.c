@@ -29,15 +29,17 @@
 //size for the array of entities who has max inc rel
 #define DEF_MAX_REL_L 12
 
-#define DEF_DEL_REL_T_IND_L 50
+#define DEF_DEL_REL_T_IND_L 5
 
-#define DEF_OUTPUT_L 5000
+#define DEF_OUTPUT_L 10000
 
 //GLOBAL DATA STRUCTURES
 char virgoletta[2] = "\"";
 char virgolettaspazio[3] = "\" ";
+char puntoevirgola[2] = ";";
 char acapo[2] = "\n";
 char vuoto[1] = {"\0"};
+char max[2];
 
 typedef struct entity
 {
@@ -520,7 +522,7 @@ int hash(char *str){
 
     return (sum + 3) % DEF_ENT_N;
 }*/
-
+/*
 //hash2 piu efficente della prima
 int hash_n(char *str) {
 
@@ -541,7 +543,7 @@ int hash_r(char *str) {
         hash = ((hash << 5) + hash) + c; //hash * 33 + c
 
     return hash % DEF_REL_N;
-}
+}*/
 
 //hash3
 /*
@@ -561,6 +563,28 @@ int hash_r(char* str) {
     }
     return hash % DEF_REL_N;
 }*/
+//hash4
+int hash_n(char *str)
+{
+    unsigned long hash = 0;
+    int c;
+
+    while (c = *str++)
+        hash = c + (hash << 6) + (hash << 16) - hash;
+
+    return hash % DEF_ENT_N;
+}
+int hash_r(char *str)
+{
+    unsigned long hash = 0;
+    int c;
+
+    while (c = *str++)
+        hash = c + (hash << 6) + (hash << 16) - hash;
+
+    return hash % DEF_REL_N;
+}
+
 
 
 //TODO gran debug di tutta sta merda 6/08/2019
@@ -1529,7 +1553,6 @@ bool delEnt(char *str, entity *e) {
             }
 
 
-            if (!rem_rel_ret.deletedRelType || 1) {
 
                 //scorri la hash table dei receiver
                 relation *rel_p_b = rel_t_p->relation_receiver_hash[index];
@@ -1596,7 +1619,7 @@ bool delEnt(char *str, entity *e) {
                         }
                     }
                 }
-            }
+
             /*
             if (rel_t_p->next != NULL) {
                 rel_t_p_pre = rel_t_p;
@@ -1658,10 +1681,6 @@ bool delEnt(char *str, entity *e) {
             //printf("free(%s)", ptr->id_ent);
             prv->next = NULL;
             free(ptr);
-        } else {
-            //printf("\nCASO E non deve mai succedere");
-            //free(ptr->id_ent);
-            //free(ptr);
         }
 
 
@@ -2204,10 +2223,14 @@ bool delEnt(char *str, entity *e) {
 
         int i = 0;
         relation_t *rel_t_ptr = relation_t_head;
+        bool none = true;
+        bool space = false;
+
+        /*
 
         if (relation_t_head == NULL) {
             fputs("none", stdout);
-        }
+        }*/
 
 
 
@@ -2215,7 +2238,9 @@ bool delEnt(char *str, entity *e) {
 
 
             if(rel_t_ptr->max > 0) {
-                if (i != 0) {
+                none = false;
+                if (space) {
+
                     //strcat(output, " ");
                     fputs(" ", stdout);
                     //printf(" ");
@@ -2243,19 +2268,23 @@ bool delEnt(char *str, entity *e) {
                 }
 
                 fputs(output, stdout);
+
                 printf("%d;", rel_t_ptr->max);
 
 
                 //putc_unlocked(rel_t_ptr->max, stdout);
                 //fputs(rel_t_ptr->max, stdout);
-                i++;
+                space = true;
             }
 
             rel_t_ptr = rel_t_ptr->next;
 
         }
 
-        fputs("\n", stdout);
+        if(none)
+            fputs("none\n", stdout);
+        else
+            fputs("\n", stdout);
 
 
 
