@@ -38,8 +38,6 @@ char virgoletta[2] = "\"";
 char virgolettaspazio[3] = "\" ";
 char acapo[2] = "\n";
 char vuoto[1] = {"\0"};
-char puntoevirgola[1] = {";"};
-char max[1];
 
 typedef struct entity
 {
@@ -143,8 +141,6 @@ int deleted_rel_type_indexes[DEF_DEL_REL_T_IND_L];
 
 //FUNCTIONS DEFINITION
 char *inputString(FILE *,int);
-void itoa(int n, char s[]);
-void reverse(char s[]);
 
 int hash_n(char *);
 int hash_r(char *);
@@ -199,14 +195,9 @@ void main()
         {
 
             //short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
-            strncpy(short_name, &input[8], strlen(input)-10);
-            int x = strlen(input);
-            if(x == 1)
-                short_name[strlen(input)-11] = '\0';
-            else
-                short_name[strlen(input)-10] = '\0';
-
-            //printf("\n[DEBUG] ADDENT Short_name: %s", short_name);
+            strncpy(short_name, &input[8], strlen(input) - 10);
+            short_name[strlen(input)-10] = '\0';
+            //printf("\n[DEBUG] Short_name: %s", short_name);
 
             //printf("\n[DEBUG]----------------- chiamo addEnt per aggiungere un entità-------------");
             addEnt(short_name, entity_hash[0]);
@@ -216,13 +207,9 @@ void main()
         } else if(strncmp(input, DELENT, 6) == 0){
             //printf("\n[DEBUG] read deleent\n");
             //short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
-            strncpy(short_name, &input[8], strlen(input)-10);
-            int x = strlen(input);
-            if(x == 1)
-                short_name[strlen(input)-11] = '\0';
-            else
-                short_name[strlen(input)-10] = '\0';
-            //printf("\n[DEBUG] DELENT Short_name: %s", short_name);
+            strncpy(short_name, &input[8], strlen(input) - 10);
+            short_name[strlen(input)-10] = '\0';
+            //printf("\n[DEBUG] Short_name: %s", short_name);
             //printf("\n delete: %s", short_name);
             delEnt(short_name, entity_hash[0]);
 
@@ -292,7 +279,6 @@ void main()
             strncpy(id_rel, &input[curr_pos], i);
             id_rel[i] = '\0';
 
-            //printf("\n[DEBUG] ADDREL");
             //printf("\nid_a: %s ", id_a);
             //printf("id_b: %s ", id_b);
             //printf("id_rel: %s ", id_rel);
@@ -534,9 +520,9 @@ int hash(char *str){
 
     return (sum + 3) % DEF_ENT_N;
 }*/
-/*
+
 //hash2 piu efficente della prima
-int hash(char *str) {
+int hash_n(char *str) {
 
     unsigned long hash = 5381;
     int c;
@@ -545,13 +531,23 @@ int hash(char *str) {
         hash = ((hash << 5) + hash) + c; //hash * 33 + c
 
     return hash % DEF_ENT_N;
-}*/
+}
+int hash_r(char *str) {
+
+    unsigned long hash = 5381;
+    int c;
+
+    while (c = *str++)
+        hash = ((hash << 5) + hash) + c; //hash * 33 + c
+
+    return hash % DEF_REL_N;
+}
 
 //hash3
-
+/*
 int hash_n(char* str) {
     unsigned int hash = 0;
-    for (int i = 0 ; str[i] != '\0' && i < 10 ; i++)
+    for (int i = 0 ; str[i] != '\0'; i++)
     {
         hash = 31*hash + str[i];
     }
@@ -559,12 +555,12 @@ int hash_n(char* str) {
 }
 int hash_r(char* str) {
     unsigned int hash = 0;
-    for (int i = 0 ; str[i] != '\0' && i < 10 ; i++)
+    for (int i = 0 ; str[i] != '\0'; i++)
     {
         hash = 31*hash + str[i];
     }
     return hash % DEF_REL_N;
-}
+}*/
 
 
 //TODO gran debug di tutta sta merda 6/08/2019
@@ -745,7 +741,7 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
 
             //TODO non va bene se rimuovo un tipo di relazione prima perchè poi mi assegna lo stesso index per
             //TODO 2 tipi diversi di relazione
-
+            /*
             bool foundDelRelTypeIndex = false;
             for (int k = 0; k < DEF_DEL_REL_T_IND_L; ++k) {
                 if (deleted_rel_type_indexes[k] != -1) {
@@ -756,13 +752,13 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
                     foundDelRelTypeIndex = true;
                     break;
                 }
-            }
+            }*/
 
-            if (!foundDelRelTypeIndex) {
+           // if (!foundDelRelTypeIndex) {
                 //printf("\nCASO B) index trovato preso da quelli nuovi (non c'erano di cancellati) = %d", i);
                 //printf("\nB) assegno alla nuova relazione: %s l'indice %d", newRelType->id_rel, i);
                 newRelType->index = i;
-            }
+            //}
 
             relation_t *rel_t_ptr;
             relation_t *rel_t_ptr_prev;
@@ -1282,7 +1278,13 @@ bool addRel(char *id_a, char *id_b, char *id_rel) {
          */
 
         //stessa cosa per l'hash table dei receiver
-        int h_b = hash_r(id_b);
+        //se il nome era uguale al precedente il risultato dell'hash è lo stesso non ricalcolarlo
+        int h_b;
+        if(strcmp(id_a, id_b) == 0){
+            h_b = h_a;
+        } else {
+            h_b = hash_r(id_b);
+        }
         entity *ent_b = NULL;
         relation *rel_p_b = rel_t_p->relation_receiver_hash[h_b];
         relation *rel_p_b_pre = NULL;
@@ -2202,13 +2204,10 @@ bool delEnt(char *str, entity *e) {
 
         int i = 0;
         relation_t *rel_t_ptr = relation_t_head;
-        bool none = true;
-        bool spazio = false;
 
-        /*
         if (relation_t_head == NULL) {
             fputs("none", stdout);
-        }*/
+        }
 
 
 
@@ -2216,12 +2215,9 @@ bool delEnt(char *str, entity *e) {
 
 
             if(rel_t_ptr->max > 0) {
-
-                none = false;
-                char output[DEF_OUTPUT_L] = "\0";
-                if (spazio) {
-                    strcat(output, " ");
-                    //fputs(" ", stdout);
+                if (i != 0) {
+                    //strcat(output, " ");
+                    fputs(" ", stdout);
                     //printf(" ");
                 }
 
@@ -2229,6 +2225,7 @@ bool delEnt(char *str, entity *e) {
                 //fputs("\"", stdout);
                 //fputs(rel_t_ptr->id_rel, stdout);
                 //fputs("\" ", stdout);
+                char output[DEF_OUTPUT_L] = "\0";
                 strcat(output, virgoletta);
                 strcat(output, rel_t_ptr->id_rel);
                 strcat(output, virgolettaspazio);
@@ -2245,149 +2242,220 @@ bool delEnt(char *str, entity *e) {
                     ptr = ptr->next;
                 }
 
-                //printf("%d;", rel_t_ptr->max);
-                itoa(rel_t_ptr->max, max);
-                strcat(output, max);
-                strcat(output, puntoevirgola);
                 fputs(output, stdout);
+                printf("%d;", rel_t_ptr->max);
 
 
                 //putc_unlocked(rel_t_ptr->max, stdout);
                 //fputs(rel_t_ptr->max, stdout);
-                output[0] = '\0';
-                spazio = true;
+                i++;
             }
 
             rel_t_ptr = rel_t_ptr->next;
 
         }
-
-
-        if (none) {
-          fputs("none", stdout);
-        }
-
 
         fputs("\n", stdout);
 
+
+
+        /*
+        for (i = 0; i < DEF_REL_T_L; ++i) {
+            if (relation_t_array[i] != NULL) {
+                none = false;
+                if(i != 0){
+                    printf(" ");
+                }
+
+                printf("\"%s\" ", relation_t_array[i]->id_rel);
+                int j = 0;
+                max_entity *ptr = relation_t_array[i]->max_entity_list;
+                while(ptr != NULL){
+                    printf("\"%s\" ", ptr->ent_ptr->id_ent);
+                    ptr = ptr->next;
+                }
+                printf("%d;", relation_t_array[i]->max);
+            }*/
+
+        //if(i < DEF_REL_T_L) {
+        //   if (relation_t_array[i + 1] != NULL) {
+        //      printf(" ");
+        // }
+        //}
+
+        //}
+
+
+        //TODO valutare caso in cui ci sono piu di un max con lo stesso numero di relazioni entranti
+        /*
+        int j = 0;
+        while(relation_t_array[i]->max_inc_rels[j] != NULL){
+            printf("\"%s\" %d;", relation_t_array[i]->max_inc_rels[j]->id_ent, relation_t_array[i]->max);
+            j++;
+        }*/
+
     }
 
-
-    /* itoa:  convert n to characters in s */
-    void itoa(int n, char s[])
-    {
-        int i, sign;
-
-        if ((sign = n) < 0)  /* record sign */
-            n = -n;          /* make n positive */
-        i = 0;
-        do {       /* generate digits in reverse order */
-            s[i++] = n % 10 + '0';   /* get next digit */
-        } while ((n /= 10) > 0);     /* delete it */
-        if (sign < 0)
-            s[i++] = '-';
-        s[i] = '\0';
-        reverse(s);
-    }
+    void print() {
 
 
-    /* reverse:  reverse string s in place */
-    void reverse(char s[])
-    {
-        int i, j;
-        char c;
+        printf("[DEBUG] Lista entità: ");
+        entity *tmp;
 
-        for (i = 0, j = strlen(s)-1; i<j; i++, j--) {
-            c = s[i];
-            s[i] = s[j];
-            s[j] = c;
-        }
-    }
+        for (int i = 0; i < DEF_ENT_N; ++i) {
 
+            //printf("\nhash[%d]", i);
 
-void print() {
+            if(entity_hash[i] != NULL) {
+                tmp = entity_hash[i];
 
-
-    printf("[DEBUG] Lista entità: ");
-    entity *tmp;
-
-    for (int i = 0; i < DEF_ENT_N; ++i) {
-
-        //printf("\nhash[%d]", i);
-
-        if (entity_hash[i] != NULL) {
-            tmp = entity_hash[i];
-
-            while (tmp->next != NULL) {
-                if (tmp->id_ent != NULL) {
-                    printf("\n %s ", tmp->id_ent);
-                    for (int j = 0; j < DEF_MAX_REL_L; ++j) {
-                        printf("\nent_b_counters[%d] = %d", j, tmp->rel_ent_counters[j]);
+                while (tmp->next != NULL) {
+                    if (tmp->id_ent != NULL) {
+                        printf("\n %s ", tmp->id_ent);
+                        for (int j = 0; j < DEF_MAX_REL_L; ++j) {
+                            printf("\nent_b_counters[%d] = %d", j, tmp->rel_ent_counters[j]);
+                        }
+                        printf("\n-------------------------------------------");
+                        tmp = tmp->next;
                     }
-                    printf("\n-------------------------------------------");
-                    tmp = tmp->next;
+
                 }
 
-            }
-
-            printf("\n %s "
-                   "", tmp->id_ent);
-            for (int j = 0; j < DEF_MAX_REL_L; ++j) {
-                printf("\nent_b_counters[%d] = %d", j, tmp->rel_ent_counters[j]);
-            }
-            printf("\n----------------------------------------");
-        }
-    }
-
-    printf("\n[DEBUG] Stato attuale delle liste di relazioni: \n");
-    relation_t *rel_t_p = relation_t_head;
-    while (rel_t_p != NULL) {
-        printf("\n[DEBUG] TIPO DI RELAZIONE: %s", rel_t_p->id_rel);
-        printf("\n[DEBUG] MAX = %d", rel_t_p->max);
-        for (int k = 0; k < DEF_REL_N; ++k) {
-            //scorri k-esima posizione della hash table
-
-            if (rel_t_p->relation_sender_hash[k] != NULL) {
-
-                relation *ptr = rel_t_p->relation_sender_hash[k];
-                while (ptr != NULL) {
-                    printf("\nhash_table_sender[%d]: ", k);
-                    printf("\nid_datore: %s", ptr->sender->id_ent);
-                    printf("\nid_ricevente: %s", ptr->receiving->id_ent);
-                    ptr = ptr->next_a;
+                printf("\n %s "
+                       "", tmp->id_ent);
+                for (int j = 0; j < DEF_MAX_REL_L; ++j) {
+                    printf("\nent_b_counters[%d] = %d", j, tmp->rel_ent_counters[j]);
                 }
+                printf("\n----------------------------------------");
             }
-
-            if (rel_t_p->relation_receiver_hash[k] != NULL) {
-
-                relation *ptr = rel_t_p->relation_receiver_hash[k];
-                while (ptr != NULL) {
-                    printf("\nhash_table_receiver[%d]: ", k);
-                    printf("\nid_datore: %s", ptr->sender->id_ent);
-                    printf("\nid_ricevente: %s", ptr->receiving->id_ent);
-                    ptr = ptr->next_b;
-                }
-            }
-
         }
 
-        rel_t_p = rel_t_p->next;
+        printf("\n[DEBUG] Stato attuale delle liste di relazioni: \n");
+        relation_t *rel_t_p = relation_t_head;
+        while (rel_t_p != NULL) {
+            printf("\n[DEBUG] TIPO DI RELAZIONE: %s", rel_t_p->id_rel);
+            printf("\n[DEBUG] MAX = %d", rel_t_p->max);
+            for (int k = 0; k < DEF_REL_N; ++k) {
+                    //scorri k-esima posizione della hash table
 
-    }
+                    if (rel_t_p->relation_sender_hash[k] != NULL) {
 
-    relation_t *rel_t_ptr = relation_t_head;
-    printf("\n[DEBUG] STATO DELLA LISTA DI TIPI DI RELAZIONI: ");
-    while (rel_t_ptr != NULL) {
-        printf("\nid_rel-> %s", rel_t_ptr->id_rel);
-        printf("\tmax-> %d", rel_t_ptr->max);
-        printf("\tindex: %d", rel_t_ptr->index);
+                        relation *ptr = rel_t_p->relation_sender_hash[k];
+                        while (ptr != NULL) {
+                            printf("\nhash_table_sender[%d]: ", k);
+                            printf("\nid_datore: %s", ptr->sender->id_ent);
+                            printf("\nid_ricevente: %s", ptr->receiving->id_ent);
+                            ptr = ptr->next_a;
+                        }
+                    }
 
-        if (rel_t_ptr->next != NULL)
-            rel_t_ptr = rel_t_ptr->next;
-        else
-            break;
+                    if (rel_t_p->relation_receiver_hash[k] != NULL) {
 
-    }
+                        relation *ptr = rel_t_p->relation_receiver_hash[k];
+                        while (ptr != NULL) {
+                            printf("\nhash_table_receiver[%d]: ", k);
+                            printf("\nid_datore: %s", ptr->sender->id_ent);
+                            printf("\nid_ricevente: %s", ptr->receiving->id_ent);
+                            ptr = ptr->next_b;
+                        }
+                    }
 
+                }
+
+            rel_t_p = rel_t_p->next;
+
+        }
+
+        relation_t *rel_t_ptr = relation_t_head;
+        printf("\n[DEBUG] STATO DELLA LISTA DI TIPI DI RELAZIONI: ");
+        while(rel_t_ptr != NULL)
+        {
+            printf("\nid_rel-> %s", rel_t_ptr->id_rel);
+            printf("\tmax-> %d", rel_t_ptr->max);
+            printf("\tindex: %d", rel_t_ptr->index);
+
+            if(rel_t_ptr->next != NULL)
+                rel_t_ptr = rel_t_ptr->next;
+            else
+                break;
+
+        }
+
+        /*
+        for (int l = 0; l < DEF_REL_T_L; ++l) {
+            if(relation_t_array[l] != NULL) {
+                max_entity *ptr = relation_t_array[l]->max_entity_list;
+                printf("\n[DEBUG] scorro la lista entità max per il tipo di rel: %d: %s", l, relation_t_array[l]->id_rel);
+                while (ptr != NULL) {
+                    printf("\nptr -> %s", ptr->ent_ptr->id_ent);
+                    ptr = ptr->next;
+                }
+            }*/
+        //}
+//}
+/*
+void sort_rel_t_array(){
+
+    //insertion sort -> could be improved but it wont impact that much because there are just a few rel_types
+    //if need little time improvement could improve this function
+
+    //printf("\n------------------------[DEBUG] chiamato sort relation type array!--------------------------");
+
+    int i = 1;
+    while (i < DEF_REL_T_L){
+
+        int j = i;
+
+        //there is only 1 element->already sorted
+        if(relation_t_array[j] == NULL || relation_t_array[j-1] == NULL){
+            return;
+        }
+
+
+        printf("\n--------------INITIAL--------------");
+        printf("\n\trelation_t_array[0]->id_rel: %s", relation_t_array[0]->id_rel);
+        printf("\n\trelation_t_array[1]->id_rel: %s\n", relation_t_array[1]->id_rel);
+
+
+
+        //k è l'indice della prima lettera diversa per le 2 relazioni che sto confrontando
+        int k = 0;
+
+        while(k < strlen(relation_t_array[j-1]->id_rel) && k < strlen(relation_t_array[j]->id_rel)){
+            if ((int) relation_t_array[j - 1]->id_rel[k] == (int) relation_t_array[j]->id_rel[k]) {
+                k++;
+            } else {
+                break;
+            }
+        }
+
+
+        while(j > 0 && ((int) relation_t_array[j-1]->id_rel[k] > (int) relation_t_array[j]->id_rel[k])){
+
+        while(j > 0 && strcmp(relation_t_array[j-1]->id_rel, relation_t_array[j]->id_rel) > 0){
+            //swap A[j] and A[j-1]
+
+            relation_t* temp;
+            temp = (relation_t*) malloc(sizeof(relation_t));
+
+            temp->id_rel = relation_t_array[j]->id_rel;
+            temp->max_entity_list = relation_t_array[j]->max_entity_list;
+            temp->max = relation_t_array[j]->max;
+            temp->index = relation_t_array[j]->index;
+
+            relation_t_array[j] = relation_t_array[j-1];
+            relation_t_array[j-1]->max = temp->max;
+
+            j--;
+        }
+
+
+        printf("\n----------SWAP-----------");
+        printf("\n\trelation_t_array[0]->id_rel: %s", relation_t_array[0]->id_rel);
+        printf("\n\trelation_t_array[1]->id_rel: %s\n", relation_t_array[1]->id_rel);
+
+
+        i++;
+    }*/
 }
 
