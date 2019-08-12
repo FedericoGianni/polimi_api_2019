@@ -17,14 +17,14 @@
 #define DEF_INPUT_L_INC 16
 
 //entity hash table length
-#define DEF_ENT_N 10000
+#define DEF_ENT_N 99991
 //entity dynamic array initial length
 #define DEF_ENT_L 12
 
 //initial relations type array length
 #define DEF_REL_T_L 12
 //relation hash table length
-#define DEF_REL_N 1000
+#define DEF_REL_N 2767
 
 //size for the array of entities who has max inc rel
 #define DEF_MAX_REL_L 12
@@ -191,14 +191,17 @@ void main()
         int r = getline(&input_b, buff_size_ptr, stdin);
         //input = inputString(stdin, DEF_INPUT_L);
 
-        //printf("\n[DEBUG] Letta la stringa: %s", input);
+        printf("\n[DEBUG] Letta la stringa: %s", input);
 
         if(strncmp(input, ADDENT, 6) == 0)
         {
 
             //short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
             strncpy(short_name, &input[8], strlen(input) - 10);
-            short_name[strlen(input)-10] = '\0';
+            if(strlen(input) < 13)
+                short_name[strlen(input)-11] = '\0';
+            else
+                short_name[strlen(input)-10] = '\0';
             //printf("\n[DEBUG] Short_name: %s", short_name);
 
             //printf("\n[DEBUG]----------------- chiamo addEnt per aggiungere un entità-------------");
@@ -210,9 +213,12 @@ void main()
             //printf("\n[DEBUG] read deleent\n");
             //short_name = (char *) malloc((strlen(input) -10)* sizeof(char));
             strncpy(short_name, &input[8], strlen(input) - 10);
-            short_name[strlen(input)-10] = '\0';
+            if(strlen(input) < 13)
+                short_name[strlen(input)-11] = '\0';
+            else
+                short_name[strlen(input)-10] = '\0';
             //printf("\n[DEBUG] Short_name: %s", short_name);
-            //printf("\n delete: %s", short_name);
+            printf("\n[DEBUG] DELETE: %s", short_name);
             delEnt(short_name, entity_hash[0]);
 
 
@@ -281,9 +287,10 @@ void main()
             strncpy(id_rel, &input[curr_pos], i);
             id_rel[i] = '\0';
 
-            //printf("\nid_a: %s ", id_a);
-            //printf("id_b: %s ", id_b);
-            //printf("id_rel: %s ", id_rel);
+            printf("\n[DEBUG] ADDREL: ");
+            printf("\nid_a: %s ", id_a);
+            printf("id_b: %s ", id_b);
+            printf("id_rel: %s ", id_rel);
 
             addRel(id_a, id_b, id_rel);
 
@@ -357,10 +364,10 @@ void main()
             strncpy(id_rel, &input[curr_pos], i);
             id_rel[i] = '\0';
 
-            //printf("\n[DEBUG] delRel: ");
-            //printf("\nid_a: %s ", id_a);
-            //printf("id_b: %s ", id_b);
-            //printf("id_rel: %s ", id_rel);
+            printf("\n[DEBUG] DELREL: ");
+            printf("\nid_a: %s ", id_a);
+            printf("id_b: %s ", id_b);
+            printf("id_rel: %s ", id_rel);
 
             delRel(id_a, id_b, id_rel);
 
