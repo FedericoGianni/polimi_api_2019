@@ -24,7 +24,7 @@
 //initial relations type array length
 #define DEF_REL_T_L 12
 //relation hash table length
-#define DEF_REL_N 10000
+#define DEF_REL_N 1000
 
 //size for the array of entities who has max inc rel
 #define DEF_MAX_REL_L 12
@@ -1368,7 +1368,7 @@ bool delEnt(char *str, entity *e) {
     //3. se il nome c'è -> 1. elimino tutte le relazioni che hanno a che fare con quel nome
     //                     2. aggiorno i vari contatori / lista di max per il report
     //                     3. elimino l'entità dalla hash table
-    int index = hash_n(str);
+    int index = hash_r(str);
     bool entityFound = false;
 
 
@@ -2124,7 +2124,7 @@ bool delEnt(char *str, entity *e) {
             rel_p_a_pre->next_a = NULL;
             //free(rel_p_a);
         } else {
-            printf("\nNON DEVE MAI SUCCEDERE!!");
+            //printf("\nNON DEVE MAI SUCCEDERE!!");
         }
 
         //CASO B
@@ -2167,7 +2167,7 @@ bool delEnt(char *str, entity *e) {
             free(rel_p_b);
             //rel_p_b = NULL;
         } else {
-            printf("\nNON DEVE MAI SUCCEDERE");
+            //printf("\nNON DEVE MAI SUCCEDERE");
         }
 
         /*
