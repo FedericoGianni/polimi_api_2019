@@ -139,9 +139,6 @@ int deleted_rel_type_indexes[DEF_DEL_REL_T_IND_L];
 int hash_n(char *);
 int hash_r(char *);
 
-void itoa(int n, char s[]);
-void reverse(char s[]);
-
 rem_rel_t rem_rel(relation_t*, relation_t*, relation *, relation *, relation*, relation *, int, int);
 
 bool addEnt(char *, entity*);
@@ -351,7 +348,6 @@ bool addEnt(char *str, entity *e) {
         newEnt = (entity *) malloc(sizeof(entity));
 
 
-        //TODO meglio malloc (meno spazio) o array statico?
         //newEnt->id_ent = (char*) malloc(sizeof(char)*(strlen(str)+1));
         newEnt->id_ent = newEnt->id_ent_n;
         strcpy(newEnt->id_ent, str);
@@ -392,7 +388,6 @@ bool addEnt(char *str, entity *e) {
         entity * newEnt;
         newEnt = (entity *) malloc(sizeof(entity));
 
-        //TODO meglio malloc (meno spazio) o array statico?
         //newEnt->id_ent = (char*) malloc(sizeof(char)*(strlen(str)+1));
         newEnt->id_ent = newEnt->id_ent_n;
         strcpy(newEnt->id_ent, str);
@@ -1923,10 +1918,10 @@ bool delEnt(char *str, entity *e)
                 }
 
 
-                itoa(rel_t_ptr->max, max);
-                strcat(output, max);
-                strcat(output, puntoevirgola);
-                //printf("%d;", rel_t_ptr->max);
+                //itoa(rel_t_ptr->max, max);
+                //strcat(output, max);
+                //strcat(output, puntoevirgola);
+                printf("%d;", rel_t_ptr->max);
 
                 fputs(output, stdout);
 
@@ -2109,35 +2104,4 @@ void sort_rel_t_array(){
     }*/
 }
 
-
-/* reverse:  reverse string s in place */
-void reverse(char s[])
-{
-    int i, j;
-    char c;
-
-    for (i = 0, j = strlen(s)-1; i<j; i++, j--) {
-        c = s[i];
-        s[i] = s[j];
-        s[j] = c;
-    }
-}
-
-
-/* itoa:  convert n to characters in s */
-void itoa(int n, char s[])
-{
-    int i, sign;
-
-    if ((sign = n) < 0)  /* record sign */
-        n = -n;          /* make n positive */
-    i = 0;
-    do {       /* generate digits in reverse order */
-        s[i++] = n % 10 + '0';   /* get next digit */
-    } while ((n /= 10) > 0);     /* delete it */
-    if (sign < 0)
-        s[i++] = '-';
-    s[i] = '\0';
-    reverse(s);
-}
 
