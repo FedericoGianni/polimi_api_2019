@@ -1921,9 +1921,9 @@ bool delEnt(char *str, entity *e)
                 //itoa(rel_t_ptr->max, max);
                 //strcat(output, max);
                 //strcat(output, puntoevirgola);
-                printf("%d;", rel_t_ptr->max);
 
                 fputs(output, stdout);
+                printf("%d;", rel_t_ptr->max);
 
                 //putc_unlocked(rel_t_ptr->max, stdout);
                 //fputs(rel_t_ptr->max, stdout);
