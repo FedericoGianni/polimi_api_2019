@@ -1,4 +1,4 @@
-Progetto di Algoritmi e Strutture Dati - 2019
+<h1>Progetto di Algoritmi e Strutture Dati - 2019</h1>
 
 Si vuole implementare un meccanismo di monitoraggio di relazioni tra
 entità (per esempio persone) che cambiano nel tempo
