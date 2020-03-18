@@ -2,15 +2,18 @@ Progetto di Algoritmi e Strutture Dati - 2019
 
 Si vuole implementare un meccanismo di monitoraggio di relazioni tra
 entità (per esempio persone) che cambiano nel tempo
+
 • Si immagini, per esempio, un social network, in cui nuovi utenti
 possono registrarsi, e utenti esistenti possono cancellare il proprio
 account, diventare “amici” di altri utenti, rompere la relazione di
 amicizia, ecc.
+
 • Le relazioni tra entità non sono necessariamente simmetriche. Per
 esempio, Alice può essere “amica” di Bruno, ma l’amicizia non è
 reciprocata (Bruno non è amico di Alice)
 
 In maniera più astratta, il meccanismo monitora i seguenti fenomeni:
+
 • Una nuova entità comincia ad essere monitorata
 • Una entità monitorata smette di esserlo
 • Una nuova relazione viene stabilita tra 2 entità monitorate
