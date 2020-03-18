@@ -1,5 +1,7 @@
 <h1>Progetto di Algoritmi e Strutture Dati - 2019</h1>
 
+<h2> valutazione: 27/30 </h2>
+
 Si vuole implementare un meccanismo di monitoraggio di relazioni tra
 entità (per esempio persone) che cambiano nel tempo
 
